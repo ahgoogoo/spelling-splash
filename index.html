@@ -1,0 +1,1499 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Spelling Splash</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Fredoka:wght@500;600;700&family=Lexend:wght@400;600&display=swap" rel="stylesheet">
+<style>
+[hidden]{display:none!important}
+body{margin:0}
+/* Layout concept: one sunlit-ocean world. Chunky buttons, big type, a deep-water play field,
+   and a calm white "classroom" surface for teacher tools. Single committed look (no dark mode). */
+:root{
+  --sky:#e6f7ff; --foam:#ffffff; --deep:#06294d; --sea:#0b62a8; --aqua:#1cc2d6;
+  --sun:#ffc21a; --sun-d:#c98f00; --coral:#c9301f; --kelp:#0e8f4b; --line:#b4dcf0; --ink2:#2b4a6b;
+  --f-disp:'Fredoka','Trebuchet MS',system-ui,sans-serif;
+  --f-body:'Andika','Trebuchet MS',system-ui,sans-serif;
+  color-scheme:light;
+}
+/* Easy-read option: one evenly spaced face everywhere */
+html.dys{--f-disp:'Lexend','Verdana',sans-serif;--f-body:'Lexend','Verdana',sans-serif}
+html.dys body{letter-spacing:.04em;word-spacing:.14em;line-height:1.75}
+
+html,body{height:100%}
+*{box-sizing:border-box}
+body{
+  background:var(--sky);color:var(--deep);
+  font:400 1.1rem/1.5 var(--f-body);
+  padding-block:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--f-disp);margin:0;line-height:1.15;text-wrap:balance}
+h1{font-size:clamp(2.4rem,7vw,4rem);font-weight:700}
+h2{font-size:clamp(1.6rem,4vw,2.2rem);font-weight:600}
+h3{font-size:1.3rem;font-weight:600}
+p{margin:0}
+:focus-visible{outline:4px solid var(--sun);outline-offset:2px}
+
+/* ---------- animated sea ---------- */
+.sea{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+  background:linear-gradient(#bfeaff 0%,#e6f7ff 55%,#c7efee 100%)}
+.sea i{position:absolute;bottom:-60px;border-radius:50%;border:2px solid #fff;background:rgba(255,255,255,.35);animation:rise linear infinite}
+@keyframes rise{to{transform:translateY(-115vh) translateX(30px)}}
+.shell{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;min-height:0;width:100%;max-width:1100px;margin:0 auto}
+#app{flex:1;display:flex;flex-direction:column;min-height:0;padding-bottom:1.5rem}
+
+/* ---------- top bar ---------- */
+.bar{display:flex;align-items:center;justify-content:space-between;gap:.6rem;flex-wrap:wrap;padding:.7rem 0}
+.brand{font:700 1.5rem var(--f-disp);background:none;border:0;cursor:pointer;color:var(--deep);padding:.3rem .2rem}
+.brand span{color:var(--sea)}
+.tools{display:flex;gap:.5rem;flex-wrap:wrap}
+.chip{min-height:44px;padding:.3rem .9rem;border-radius:999px;border:2px solid var(--deep);background:#fff;cursor:pointer;font-weight:700;font-size:.95rem}
+.chip[aria-pressed="true"]{background:var(--sun)}
+.chip.armed{background:var(--coral);color:#fff}
+
+/* ---------- buttons & cards ---------- */
+.btn{min-height:56px;padding:.55rem 1.5rem;border-radius:18px;border:3px solid var(--deep);border-bottom-width:6px;
+  background:#fff;color:var(--deep);font:600 1.2rem var(--f-disp);cursor:pointer;transition:transform .08s}
+.btn:active{transform:translateY(3px);border-bottom-width:3px}
+.btn.primary{background:var(--sun)}
+.btn.blue{background:var(--sea);color:#fff}
+.btn.danger{background:var(--coral);color:#fff}
+.btn.small{min-height:44px;padding:.25rem 1rem;font-size:1rem;border-bottom-width:4px}
+.btn.armed{background:var(--coral);color:#fff}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.card{background:#fff;border:3px solid var(--deep);border-radius:24px;padding:1.2rem}
+.stack{display:flex;flex-direction:column;gap:1rem}
+.row{display:flex;gap:.8rem;flex-wrap:wrap;align-items:center}
+.row.between{justify-content:space-between}
+.muted{color:var(--ink2)}
+.err{background:#ffe3df;border:3px solid var(--coral);color:#7a1208;border-radius:16px;padding:.7rem 1rem;font-weight:700}
+.ok-note{background:#dcf7e8;border:3px solid var(--kelp);border-radius:16px;padding:.7rem 1rem;font-weight:700}
+label{display:block;font-weight:700;margin-bottom:.3rem}
+input[type=text],input[type=password],select,textarea{width:100%;min-height:56px;padding:.6rem 1rem;border-radius:16px;border:3px solid var(--deep);background:#fff;font-size:1.2rem}
+textarea{min-height:160px;resize:vertical}
+
+/* ---------- home ---------- */
+.home{display:flex;flex-direction:column;gap:1.6rem;align-items:center;text-align:center;padding-top:1rem}
+.lead{font-size:1.3rem;max-width:34ch}
+.roles{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.2rem;width:100%}
+.role{display:flex;flex-direction:column;gap:.5rem;align-items:center;justify-content:center;min-height:200px;padding:1.5rem;border-radius:32px;border:4px solid var(--deep);border-bottom-width:10px;cursor:pointer;text-align:center}
+.role b{font:700 clamp(1.8rem,5vw,2.5rem) var(--f-disp)}
+.role span{font-size:1.1rem}
+.role.t{background:#fff}
+.role.s{background:var(--sun)}
+.role:active{transform:translateY(5px);border-bottom-width:5px}
+.logo{display:flex;gap:.2rem;justify-content:center;font:700 clamp(2.6rem,9vw,4.6rem) var(--f-disp)}
+.logo span{display:inline-block;animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-8px)}}
+
+/* ---------- forms ---------- */
+.form{max-width:520px;width:100%;margin:1rem auto 0}
+.codein{font:700 3rem var(--f-disp)!important;text-align:center;letter-spacing:.35em;text-transform:uppercase;padding-left:.35em!important}
+.tabs{display:flex;gap:.5rem;flex-wrap:wrap}
+.tab{min-height:50px;padding:.3rem 1.2rem;border-radius:16px 16px 0 0;border:3px solid var(--deep);border-bottom:0;background:#fff;font:600 1.15rem var(--f-disp);cursor:pointer}
+.tab.on{background:var(--sun)}
+.panel{border:3px solid var(--deep);border-radius:0 24px 24px 24px;background:#fff;padding:1.2rem;margin-top:-3px}
+.lists{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:1rem}
+.lcard{border:3px solid var(--line);border-radius:20px;padding:1rem;display:flex;flex-direction:column;gap:.6rem;min-width:0}
+.lcard h3{overflow-wrap:anywhere}
+.words{display:flex;flex-wrap:wrap;gap:.4rem}
+.words span{background:var(--sky);border:2px solid var(--line);border-radius:999px;padding:.1rem .7rem;font-size:1rem}
+
+/* ---------- setup ---------- */
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.8rem}
+.opt{border:3px solid var(--deep);border-radius:20px;background:#fff;padding:.9rem;text-align:left;cursor:pointer;min-height:84px}
+.opt b{display:block;font:600 1.25rem var(--f-disp)}
+.opt.on{background:var(--sun);box-shadow:0 0 0 4px var(--deep) inset}
+.speeds{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.6rem}
+.speeds .opt{text-align:center}
+.speeds .em{font-size:1.8rem;display:block}
+
+/* ---------- lobby / teacher room ---------- */
+.bigcode{font:700 clamp(4.5rem,18vw,9rem) var(--f-disp);letter-spacing:.18em;padding-left:.18em;background:#fff;border:5px solid var(--deep);border-radius:36px;text-align:center;line-height:1.1;padding-block:.3rem}
+.players{display:flex;flex-wrap:wrap;gap:.6rem}
+.pchip{display:flex;align-items:center;gap:.4rem;background:#fff;border:3px solid var(--deep);border-radius:999px;padding:.2rem .3rem .2rem 1rem;font:600 1.2rem var(--f-disp);animation:pin .3s}
+.pchip.stale{opacity:.55}
+.pchip button{min-width:38px;min-height:38px;border-radius:50%;border:2px solid var(--deep);background:var(--sky);cursor:pointer;font-weight:700}
+@keyframes pin{from{transform:scale(.6);opacity:0}}
+.lb{display:flex;flex-direction:column;gap:.5rem}
+.lrow{display:grid;grid-template-columns:2.6rem minmax(5rem,11rem) 1fr minmax(6rem,auto);gap:.6rem;align-items:center;background:#fff;border:3px solid var(--deep);border-radius:18px;padding:.4rem .8rem}
+.lrow .rk{font:700 1.5rem var(--f-disp);text-align:center}
+.lrow .nm{font:600 1.2rem var(--f-disp);overflow-wrap:anywhere}
+.lrow .bar{height:22px;background:var(--sky);border:2px solid var(--deep);border-radius:999px;overflow:hidden}
+.lrow .bar i{display:block;height:100%;width:0;background:var(--aqua);transition:width .8s ease}
+.lrow.done .bar i{background:var(--kelp)}
+.lrow .sc{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+@media (max-width:560px){.lrow{grid-template-columns:2rem 1fr auto}.lrow .bar{grid-column:1/-1;order:5}}
+.timer{font:700 clamp(2.4rem,8vw,4rem) var(--f-disp);font-variant-numeric:tabular-nums}
+table{border-collapse:collapse;width:100%}
+.tw{overflow-x:auto}
+th,td{padding:.55rem .7rem;border-bottom:2px solid var(--line);text-align:left;white-space:nowrap}
+th{font:600 1rem var(--f-disp);background:var(--sky)}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+
+/* ---------- game ---------- */
+.game{flex:1;display:flex;flex-direction:column;gap:.5rem;min-height:0}
+.hud{display:flex;gap:.5rem;flex-wrap:wrap;align-items:stretch}
+.stat{flex:1 1 84px;background:#fff;border:3px solid var(--deep);border-radius:16px;padding:.15rem .6rem;text-align:center}
+.stat span{display:block;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--ink2)}
+.stat b{font:700 1.7rem/1.2 var(--f-disp);font-variant-numeric:tabular-nums}
+.hudbtns{display:flex;gap:.5rem}
+.top3{min-height:2.2rem;display:flex;gap:.5rem;flex-wrap:wrap;font-weight:700;font-size:.95rem}
+.top3 span{background:#fff;border:2px solid var(--deep);border-radius:999px;padding:.1rem .8rem}
+.field{position:relative;flex:1;min-height:250px;overflow:hidden;border-radius:24px;border:4px solid var(--deep);
+  background:linear-gradient(#63cdf2 0%,#1b86cf 45%,#06294d 100%)}
+.field::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(100deg,rgba(255,255,255,.07) 0 30px,transparent 30px 90px);pointer-events:none}
+.word{position:absolute;left:0;top:0;will-change:transform}
+.wi{white-space:pre;background:#fff;color:var(--deep);border:3px solid var(--deep);border-radius:999px;padding:.05em .7em;
+  font:700 clamp(1.6rem,4.4vw,2.4rem) var(--f-body);letter-spacing:.05em}
+.word.target .wi{box-shadow:0 0 0 5px var(--sun)}
+.ch.hit{color:#067a38;background:#c6f4da;border-radius:6px}
+.word.shake .wi{animation:shake .38s}
+.word.pop .wi{animation:pop .38s forwards}
+.word.splash .wi{animation:splash .45s forwards;border-color:var(--coral)}
+@keyframes shake{20%{transform:translateX(-9px)}40%{transform:translateX(9px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+@keyframes pop{40%{transform:scale(1.25);background:var(--sun)}100%{transform:scale(0);opacity:0}}
+@keyframes splash{to{transform:translateY(20px) scale(.4);opacity:0}}
+.spark{position:absolute;width:12px;height:12px;border-radius:50%;pointer-events:none;animation:spark .6s ease-out forwards}
+@keyframes spark{to{transform:translate(var(--dx),var(--dy)) scale(.2);opacity:0}}
+.floater{position:absolute;font:700 1.6rem var(--f-disp);color:#fff;text-shadow:0 2px 0 var(--deep);animation:floatup 1s forwards;pointer-events:none}
+@keyframes floatup{to{transform:translateY(-50px);opacity:0}}
+.typebar{display:flex;gap:.5rem}
+.typebar input{flex:1;min-width:0;min-height:68px;font:700 2rem var(--f-body);text-align:center;letter-spacing:.06em;border-width:4px}
+.typebar input.bad{animation:shake .3s;border-color:var(--coral)}
+.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1rem;background:rgba(6,41,77,.78);color:#fff;z-index:5;text-align:center;padding:1rem}
+.overlay .big{font:700 clamp(6rem,30vw,14rem) var(--f-disp);line-height:1;animation:cd 1s infinite}
+@keyframes cd{0%{transform:scale(1.4);opacity:0}30%{transform:scale(1);opacity:1}}
+.fullcd{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;flex-direction:column;background:rgba(6,41,77,.9);color:#fff}
+
+/* ---------- waiting & end ---------- */
+.center{display:flex;flex-direction:column;align-items:center;text-align:center;gap:1.2rem;padding-top:1.5rem}
+.fish{font-size:4rem;animation:bob 2s ease-in-out infinite}
+.stats4{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.8rem;width:100%}
+.stats4 .stat b{font-size:2.1rem}
+.medal{font:700 clamp(2.4rem,8vw,3.6rem) var(--f-disp);background:var(--sun);border:4px solid var(--deep);border-radius:28px;padding:.4rem 1.6rem}
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:.6rem;height:270px;width:100%;max-width:520px;margin:0 auto}
+.pl{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-end;gap:.3rem;flex:1 1 0;min-width:0;opacity:0;animation:fadein .5s forwards}
+.pl .nm{font:600 1.1rem var(--f-disp);overflow-wrap:anywhere;text-align:center;line-height:1.2}
+.pl .blk{width:100%;border:4px solid var(--deep);border-bottom:0;border-radius:18px 18px 0 0;font:700 2.4rem var(--f-disp);display:flex;align-items:flex-start;justify-content:center;height:0;animation:grow 1s .3s forwards}
+.pl.p1 .blk{background:var(--sun);--h:170px}
+.pl.p2 .blk{background:#dbe7f0;--h:120px}
+.pl.p3 .blk{background:#f0b98a;--h:80px}
+.pl.me .nm{background:var(--sun);border-radius:999px;padding:0 .6rem}
+@keyframes grow{to{height:var(--h)}}
+@keyframes fadein{to{opacity:1}}
+.confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:15}
+.confetti i{position:absolute;top:-20px;width:12px;height:18px;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+.practise{display:flex;flex-wrap:wrap;gap:.5rem}
+.practise span{background:#fff;border:3px solid var(--deep);border-radius:16px;padding:.2rem .9rem;font:700 1.3rem var(--f-body);letter-spacing:.05em}
+
+#toast{position:fixed;left:50%;bottom:max(20px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:50;background:var(--deep);color:#fff;border-radius:999px;padding:.7rem 1.4rem;font-weight:700;opacity:0;pointer-events:none;transition:opacity .25s;max-width:90vw;text-align:center}
+#toast.on{opacity:1}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;animation-iteration-count:1!important;transition:none!important}.sea i{display:none}}
+</style>
+</head>
+<body>
+
+<div class="sea" id="sea" aria-hidden="true"></div>
+<div class="shell">
+  <header class="bar">
+    <button class="brand" data-act="home" aria-label="Spelling Splash home">Spelling <span>Splash</span></button>
+    <div class="tools">
+      <button class="chip" id="btnSound" data-act="sound" aria-pressed="false">Sound: On</button>
+      <button class="chip" id="btnFont" data-act="font" aria-pressed="false">Easy-read font</button>
+    </div>
+  </header>
+  <main id="app"></main>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+(function(){
+'use strict';
+
+/* =====================================================================
+   SPELLING SPLASH
+   Data kept in the artifact's shared db (never localStorage, except tiny per-device prefs):
+     settings/school                      { pinHash }
+     lists/{id}                           { name, words[], count, createdAt, updatedAt }
+     rooms/{CODE}                         { code, listId, listName, words[], mode, speed, limitSec,
+                                            status, round, startAt, seed, removed[], createdAt, expiresAt }
+     rooms/{CODE}/players/{slug}          one record per student, written only by that student:
+                                          { name, token, round, lastSeen, correct, missed, slips, keysOk,
+                                            keysBad, bestStreak, progress, done, timeMs, elapsedMs,
+                                            penaltyMs, seqIdx, trouble[{w,m,s}], cleared[] }
+   ===================================================================== */
+
+/* ---------- constants ---------- */
+var SPEEDS=[
+  {k:'snail',name:'Snail',em:'🐌',cross:24},
+  {k:'turtle',name:'Turtle',em:'🐢',cross:17},
+  {k:'rabbit',name:'Rabbit',em:'🐇',cross:12},
+  {k:'cheetah',name:'Cheetah',em:'🐆',cross:8.5},
+  {k:'rocket',name:'Rocket',em:'🚀',cross:6}
+];
+var STARTER=['because','friend','people','school','enough','thought','beautiful','favourite','different','together','library','February','Wednesday','believe','neighbour','strength','island','answer','minute','special'];
+var DAY=24*3600*1000;
+var LETTERS='ACFHJKMRSWXZ';          // easy to say aloud, no vowels except A (avoids accidental words)
+var PENALTY_MS=3000;                  // fastest-time mode: word reached the bottom
+var MAX_ACTIVE=4;
+
+/* ---------- tiny helpers ---------- */
+var $=function(s,r){return (r||document).querySelector(s)};
+var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+var sleep=function(ms){return new Promise(function(r){setTimeout(r,ms)})};
+var now=function(){return Date.now()};
+function mkStore(area){return {
+  get:function(k,d){try{var v=window[area].getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}},
+  set:function(k,v){try{window[area].setItem(k,JSON.stringify(v))}catch(e){}},
+  del:function(k){try{window[area].removeItem(k)}catch(e){}}
+}}
+var store=mkStore('localStorage'), sess=mkStore('sessionStorage');
+var CLIENT_ID=(function(){var v=store.get('sp_cid',null);if(!v){v=Math.random().toString(36).slice(2)+now().toString(36);store.set('sp_cid',v)}return v})();
+function fmtTime(ms,tenths){ms=Math.max(0,ms);var s=Math.floor(ms/1000),m=Math.floor(s/60);var t=m+':'+String(s%60).padStart(2,'0');if(tenths)t+='.'+Math.floor((ms%1000)/100);return t}
+function fmtDate(ms){return new Date(ms).toLocaleString('en-SG',{day:'numeric',month:'short',year:'numeric',hour:'numeric',minute:'2-digit'})}
+function toast(msg){var t=$('#toast');t.textContent=msg;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(function(){t.classList.remove('on')},3200)}
+
+/* ---------- word list cleaning: split, trim, collapse spaces, drop blanks and duplicates ---------- */
+function cleanWords(text){
+  var parts=String(text||'').split(/[\n\r,;\t]+/),seen={},out=[];
+  parts.forEach(function(p){
+    var w=p.replace(/\s+/g,' ').trim();
+    if(!w||w.length>30)return;
+    var k=w.toLowerCase();
+    if(seen[k])return;
+    seen[k]=1;out.push(w);
+  });
+  return out;
+}
+/* seeded shuffle so every device gets the same word order */
+function rng(seed){var a=seed>>>0;return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function shuffled(arr,seed){var a=arr.slice(),r=rng(seed);for(var i=a.length-1;i>0;i--){var j=Math.floor(r()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+
+/* ---------- names / codes ---------- */
+function cleanName(n){return String(n||'').replace(/[<>&"]/g,'').replace(/\s+/g,' ').trim().slice(0,14)}
+function slugOf(n){return 'p'+Array.from(n.toLowerCase()).map(function(c){return c.codePointAt(0).toString(36)}).join('-')}
+function randCode(){var c='';for(var i=0;i<4;i++)c+=LETTERS[Math.floor(Math.random()*LETTERS.length)];return c}
+
+/* ---------- scoring ---------- */
+function accOf(p){var t=(p.correct||0)+(p.missed||0);return t?(p.correct||0)/t:0}
+function accText(p){var t=(p.correct||0)+(p.missed||0);return t?Math.round(100*(p.correct||0)/t)+'%':'–'}
+/* Rank: Most words = score then accuracy. Fastest time = finished first, quickest time, then accuracy. Ties share a rank. */
+function rankPlayers(list,mode){
+  var a=list.map(function(p){return Object.assign({},p)});
+  function key(p){return mode==='fastest'
+    ? (p.done?'D'+p.timeMs:'U'+(p.correct||0))+'|'+accOf(p).toFixed(4)
+    : (p.correct||0)+'|'+accOf(p).toFixed(4)}
+  a.sort(function(x,y){
+    if(mode==='fastest'){
+      if(!!x.done!==!!y.done)return x.done?-1:1;
+      if(x.done&&x.timeMs!==y.timeMs)return x.timeMs-y.timeMs;
+      if(!x.done&&(y.correct||0)!==(x.correct||0))return (y.correct||0)-(x.correct||0);
+    }else if((y.correct||0)!==(x.correct||0))return (y.correct||0)-(x.correct||0);
+    var d=accOf(y)-accOf(x);if(d)return d;
+    return String(x.name).localeCompare(String(y.name));
+  });
+  a.forEach(function(p,i){p._rank=(i>0&&key(a[i-1])===key(p))?a[i-1]._rank:i+1});
+  return a;
+}
+
+/* ---------- sound (WebAudio, no files) ---------- */
+var Snd={
+  ctx:null,muted:store.get('muted',false),
+  init:function(){if(!this.ctx){try{this.ctx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(this.ctx&&this.ctx.state==='suspended')this.ctx.resume()},
+  tone:function(f,d,type,vol,when,slide){
+    if(this.muted||!this.ctx)return;
+    var t=this.ctx.currentTime+(when||0),o=this.ctx.createOscillator(),g=this.ctx.createGain();
+    o.type=type||'sine';o.frequency.setValueAtTime(f,t);
+    if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);
+    g.gain.setValueAtTime(vol||.15,t);g.gain.exponentialRampToValueAtTime(.001,t+d);
+    o.connect(g);g.connect(this.ctx.destination);o.start(t);o.stop(t+d+.03);
+  },
+  pop:function(){this.tone(520,.12,'sine',.2,0,1040);this.tone(880,.1,'triangle',.1,.06)},
+  oops:function(){this.tone(230,.16,'sine',.1,0,170)},
+  miss:function(){this.tone(320,.25,'triangle',.1,0,140)},
+  beep:function(hi){this.tone(hi?880:520,.2,'square',.07)},
+  win:function(){var s=this;[523,659,784,1047].forEach(function(f,i){s.tone(f,.28,'triangle',.14,i*.13)})}
+};
+document.addEventListener('pointerdown',function(){Snd.init()},{passive:true});
+document.addEventListener('keydown',function(){Snd.init()},{passive:true});
+function speak(t){try{if(!('speechSynthesis' in window))return;speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(t);u.rate=.85;u.lang='en-GB';speechSynthesis.speak(u)}catch(e){}}
+
+
+/* =====================================================================
+   FIREBASE REALTIME DATABASE ADAPTER
+   Gives the game the same doc()/collection() calls it was written against.
+   Each "document" lives at   sp/<path>/_   so sub-collections (a room's players) sit beside it
+   and writing a room never overwrites its players.
+   ===================================================================== */
+var FIREBASE_CONFIG={
+  apiKey:"AIzaSyBpw2t0H0BTOFH91u5teOuQGxOQSIhNkQI",
+  authDomain:"spelling-splash.firebaseapp.com",
+  databaseURL:"https://spelling-splash-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:"spelling-splash",
+  storageBucket:"spelling-splash.firebasestorage.app",
+  messagingSenderId:"763384547385",
+  appId:"1:763384547385:web:3960c992c32ad9abe2a5e8"
+};
+function makeFirebaseDB(rtdb){
+  function ref(p){return rtdb.ref('sp/'+p)}
+  function clean(o){return JSON.parse(JSON.stringify(o))}          // drops undefined, which Firebase rejects
+  function mkDoc(id,val){var ok=val!==null&&val!==undefined;return {id:id,exists:ok,data:function(){return ok?val:undefined}}}
+  function mkQuery(snap){
+    var docs=[];
+    snap.forEach(function(c){var v=c.val();if(v&&v._!==undefined&&v._!==null)docs.push(mkDoc(c.key,v._))});
+    return {docs:docs,size:docs.length,empty:!docs.length};
+  }
+  function docRef(path){
+    var parts=path.split('/'),id=parts[parts.length-1],r=ref(path+'/_');
+    return {
+      get:function(){return r.get().then(function(s){return mkDoc(id,s.val())})},
+      set:function(d){return r.set(clean(d))},
+      update:function(d){return r.update(clean(d))},
+      delete:function(){return r.remove()},
+      onSnapshot:function(next,err){var h=function(s){next(mkDoc(id,s.val()))};r.on('value',h,err);return function(){r.off('value',h)}}
+    };
+  }
+  function colRef(path){
+    var r=ref(path);
+    return {
+      get:function(){return r.get().then(mkQuery)},
+      onSnapshot:function(next,err){var h=function(s){next(mkQuery(s))};r.on('value',h,err);return function(){r.off('value',h)}}
+    };
+  }
+  return {doc:docRef,collection:colRef};
+}
+
+/* ---------- app state ---------- */
+var DB=null,DL=null;
+var S={view:'',dbReady:false,subs:[],homeSubs:[],lists:[],rooms:[],tab:'lists',editId:null,
+  code:null,room:null,players:[],player:null,slug:null,writer:null,
+  hear:store.get('hear',false),end:null,cd:false,podium:false,setup:null,soloMissed:[],tick:null};
+var G=null; // live game engine state
+var app=$('#app');
+
+function setView(name,html){S.view=name;app.innerHTML=html;window.scrollTo(0,0)}
+function applyPrefs(){
+  document.documentElement.classList.toggle('dys',!!store.get('dys',false));
+  $('#btnFont').setAttribute('aria-pressed',store.get('dys',false)?'true':'false');
+  $('#btnSound').setAttribute('aria-pressed',Snd.muted?'true':'false');
+  $('#btnSound').textContent='Sound: '+(Snd.muted?'Off':'On');
+}
+function buildSea(){
+  var sea=$('#sea'),h='';
+  for(var i=0;i<14;i++){var s=10+Math.random()*34;h+='<i style="left:'+(Math.random()*100)+'%;width:'+s+'px;height:'+s+'px;animation-duration:'+(12+Math.random()*16)+'s;animation-delay:-'+(Math.random()*20)+'s"></i>'}
+  sea.innerHTML=h;
+}
+
+/* ---------- database layer ---------- */
+async function dbRetry(fn){try{return await fn()}catch(e){if(e&&e.code==='unavailable'){await sleep(400+Math.random()*400);return await fn()}throw e}}
+/* Realtime subscription plus a gentle polling fallback so updates still arrive about every 2-4 s. */
+function watch(getRef,cb){
+  var last=now(),dead=false,unsub=null;
+  function handle(snap){last=now();if(!dead)cb(snap)}
+  try{unsub=getRef().onSnapshot(handle,function(e){console.warn('watch',e)})}catch(e){}
+  var timer=setInterval(async function(){
+    if(dead||now()-last<3000)return;
+    try{handle(await getRef().get())}catch(e){}
+  },2000);
+  return function(){dead=true;clearInterval(timer);if(unsub)try{unsub()}catch(e){}};
+}
+/* One write at a time per document; the newest data wins. */
+function makeWriter(path){
+  var busy=null,pending=null;
+  function flush(){
+    if(busy)return busy;
+    busy=(async function(){
+      try{while(pending){var d=pending;pending=null;try{await dbRetry(function(){return DB.doc(path).set(d)})}catch(e){console.warn('write',e)}}}
+      finally{busy=null}
+    })();
+    return busy;
+  }
+  return {write:function(d){pending=d;return flush()}};
+}
+async function hashPin(pin){
+  var s='spellsplash:'+pin;
+  try{var b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return Array.prototype.map.call(new Uint8Array(b),function(x){return x.toString(16).padStart(2,'0')}).join('')}
+  catch(e){var h=5381;for(var i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return 'x'+h}
+}
+
+/* =====================================================================
+   HOME
+   ===================================================================== */
+function renderHome(){
+  leaveRoom();clearHome();
+  var saved=store.get('sp_session',null);
+  var notice=!S.dbReady?'<p class="muted">Connecting to your school’s shared space…</p>'
+    :(!DB?'<div class="err">Can’t reach the game server. Check the Wi-Fi and reload the page. Solo practice still works.</div>':'');
+  setView('home','<section class="home">'
+    +'<div class="logo" aria-label="Spelling Splash">'+'Spelling Splash'.split('').map(function(c,i){return '<span style="animation-delay:'+(i*0.09)+'s">'+(c===' '?'&nbsp;':esc(c))+'</span>'}).join('')+'</div>'
+    +'<p class="lead">Type the falling words before they sink!</p>'
+    +'<div class="roles">'
+      +'<button class="role t" data-act="role-teacher"><b>I’m a Teacher</b><span>Make word lists and run a class game</span></button>'
+      +'<button class="role s" data-act="role-student"><b>I’m a Student</b><span>Join your class with a room code</span></button>'
+    +'</div>'+notice
+    +(saved&&DB?'<div class="card row between" style="width:100%"><span>Were you playing? Room <b>'+esc(saved.code)+'</b> as <b>'+esc(saved.name)+'</b></span><button class="btn blue small" data-act="rejoin">Rejoin</button></div>':'')
+    +'</section>');
+}
+
+/* =====================================================================
+   STUDENT: join, wait, countdown
+   ===================================================================== */
+function renderStudent(msg){
+  leaveRoom();
+  var saved=store.get('sp_session',null);
+  setView('student','<section class="form stack">'
+    +'<h2>Join your class</h2>'
+    +(msg?'<div class="err" id="jErr">'+esc(msg)+'</div>':'<div id="jErr" hidden></div>')
+    +'<div><label for="jCode">Room code (4 letters)</label><input id="jCode" class="codein" type="text" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" value="'+esc(saved?saved.code:'')+'"></div>'
+    +'<div><label for="jName">Your first name or nickname</label><input id="jName" type="text" maxlength="14" autocomplete="off" spellcheck="false" value="'+esc(saved?saved.name:'')+'"></div>'
+    +'<button class="btn primary" id="jGo" data-act="join">Join game</button>'
+    +'<hr style="border:0;border-top:3px dashed var(--line);width:100%">'
+    +'<button class="btn blue" data-act="host-new">Host a room for my friends</button>'
+    +'<button class="btn" data-act="solo">Practise on my own</button>'
+    +'<button class="btn" data-act="home">Back</button>'
+    +'</section>');
+  var c=$('#jCode');c.addEventListener('input',function(){c.value=c.value.toUpperCase().replace(/[^A-Z]/g,'')});
+  [c,$('#jName')].forEach(function(el){el.addEventListener('keydown',function(e){if(e.key==='Enter')doJoin()})});
+}
+function joinErr(m){var e=$('#jErr');if(!e)return;e.hidden=false;e.className='err';e.textContent=m}
+function newPlayerDoc(name,round){
+  return {name:name,token:CLIENT_ID,round:round,joinedAt:now(),lastSeen:now(),correct:0,missed:0,slips:0,keysOk:0,keysBad:0,
+    bestStreak:0,progress:0,done:false,timeMs:0,elapsedMs:0,penaltyMs:0,seqIdx:0,trouble:[],cleared:[]};
+}
+async function doJoin(){
+  var code=($('#jCode').value||'').trim().toUpperCase(),name=cleanName($('#jName').value);
+  if(!DB){joinErr('Rooms are not available in this view. You can still practise on your own.');return}
+  if(code.length!==4){joinErr('Room codes have 4 letters. Look at the board and try again.');return}
+  if(!name){joinErr('Please type your first name or a nickname.');return}
+  var btn=$('#jGo');btn.disabled=true;btn.textContent='Joining…';
+  try{
+    var rs=await dbRetry(function(){return DB.doc('rooms/'+code).get()});
+    var room=rs.exists?rs.data():null;
+    if(!room||room.expiresAt<now()){joinErr('We couldn’t find room '+code+'. Check the letters on the board and try again.');return}
+    var finalName=name,n=1,existing=null;
+    for(;;){
+      var slug=slugOf(finalName);
+      if((room.removed||[]).indexOf(slug)>-1){joinErr('That name isn’t available in this room. Please choose another one.');return}
+      var ps=await dbRetry(function(){return DB.doc('rooms/'+code+'/players/'+slug).get()});
+      if(!ps.exists)break;
+      var d=ps.data();
+      if(d.token===CLIENT_ID){existing=d;break}          // same device: this is a rejoin
+      n++;finalName=name+' '+n;if(n>40)break;               // someone else has that name: add a number
+    }
+    var slug2=slugOf(finalName);
+    if(!existing){
+      if(room.status==='ended'){joinErr('That game has finished. Ask your teacher to press Play again.');return}
+      if(room.status==='running'&&now()>room.startAt+4000){joinErr('That game has already started. You can join the next round!');return}
+    }
+    var doc=(existing&&existing.round===room.round)?Object.assign({},existing,{lastSeen:now()}):newPlayerDoc(finalName,room.round);
+    await dbRetry(function(){return DB.doc('rooms/'+code+'/players/'+slug2).set(doc)});
+    S.code=code;S.room=room;S.player=doc;S.slug=slug2;S.joinedAt=now();S.players=[];S.podium=false;S.cd=false;
+    S.writer=makeWriter('rooms/'+code+'/players/'+slug2);
+    store.set('sp_session',{code:code,name:finalName});
+    if(finalName!==name)toast('Someone already has that name, so you are '+finalName+'.');
+    studentWatch();
+    renderWait();
+  }catch(e){console.warn(e);joinErr('Something went wrong joining. Please try again.')}
+  finally{var b=$('#jGo');if(b){b.disabled=false;b.textContent='Join game'}}
+}
+async function rejoin(){
+  var s=store.get('sp_session',null);if(!s)return;
+  renderStudent();$('#jCode').value=s.code;$('#jName').value=s.name;doJoin();
+}
+/* Student subscriptions: the room document and everyone's player records */
+function studentWatch(){
+  S.subs.push(watch(function(){return DB.doc('rooms/'+S.code)},onRoomStudent));
+  S.subs.push(watch(function(){return DB.collection('rooms/'+S.code+'/players')},onPlayers));
+  S.subs.push((function(){var t=setInterval(function(){if(S.writer&&S.player&&S.view!=='game'){S.player.lastSeen=now();S.writer.write(S.player)}},12000);return function(){clearInterval(t)}})());
+  S.subs.push((function(){var t=setInterval(hostTick,1000);return function(){clearInterval(t)}})());
+}
+function onPlayers(snap){
+  S.players=snap.docs.map(function(d){return Object.assign({id:d.id},d.data())});
+  if(S.view==='wait')updateWait();
+  else if(S.view==='game')updateTop3();
+  else if(S.view==='end')updateEndRank();
+}
+function onRoomStudent(snap){
+  if(!S.code)return;
+  if(!snap.exists){var m='Your teacher closed that room.';leaveRoom();renderStudent(m);return}
+  var r=snap.data();S.room=r;
+  if((r.removed||[]).indexOf(S.slug)>-1){leaveRoom();store.del('sp_session');renderStudent('Your teacher has removed you from this room. Please ask them for help.');return}
+  if(S.player&&r.round!==S.player.round){newRound(r);return}
+  if(r.status==='lobby'){
+    if(S.view!=='wait'){stopEngine();S.cd=false;renderWait()}
+  }else if(r.status==='running'){
+    if(S.view==='wait'&&!S.cd)beginCountdown(r);
+  }else if(r.status==='ended'){
+    if(S.view==='game'&&G&&!G.over)endGame('teacher');
+    else if(S.view==='wait'){renderWait()}
+    else if(S.view==='end')updateEndRank();
+  }
+}
+function newRound(r){
+  stopEngine();S.cd=false;S.podium=false;S.end=null;
+  S.player=newPlayerDoc(S.player.name,r.round);
+  S.writer.write(S.player);
+  renderWait();
+}
+function renderWait(){
+  var r=S.room||{};
+  var ended=r.status==='ended';
+  setView('wait','<section class="center">'
+    +'<div class="fish" aria-hidden="true">🐠</div>'
+    +'<h2>You’re in, '+esc(S.player.name)+'!</h2>'
+    +(isHost()?'<p class="lead">Tell your friends to choose I\'m a Student and type this code:</p><div class="bigcode" style="width:100%;max-width:520px">'+esc(S.code)+'</div><p class="muted">'+modeText(r)+'</p>':'')
+    +'<p class="lead" id="waitMsg">'+(ended?(isHost()?'Round finished. Press Play again for another go.':'This game has finished. Your teacher can start a new round.'):'Waiting for your teacher to start the game…')+'</p>'
+    +'<div class="card"><b>Room '+esc(S.code)+'</b> · <span id="waitCount">1 player here</span></div>'
+    +'<div class="players" id="wlist" style="justify-content:center"></div>'
+    +(isHost()?'<div class="row" style="justify-content:center">'+(ended?'<button class="btn primary" data-act="host-again">Play again</button>':'<button class="btn primary" id="btnHStart" data-act="host-start" style="font-size:1.5rem;min-height:68px">Start game</button>')+'<button class="btn" data-act="host-close" data-confirm>Close room</button></div>':'<button class="btn" data-act="leave-game">Leave room</button>')
+    +'</section>');
+  updateWait();
+}
+function updateWait(){
+  var el=$('#waitCount');if(!el)return;
+  var n=S.players.filter(function(p){return p.round===(S.room||{}).round}).length||1;
+  el.textContent=n+(n===1?' player here':' players here');
+  var ps=S.players.filter(function(p){return p.round===(S.room||{}).round}).sort(function(a,b){return (a.joinedAt||0)-(b.joinedAt||0)});
+  var wl=$('#wlist');
+  if(wl){
+    var host=isHost(),h='',t=now();
+    ps.forEach(function(p){h+='<div class="pchip'+(t-(p.lastSeen||0)>40000?' stale':'')+'">'+esc(p.name)+(host&&p.id!==S.slug?'<button data-act="kick" data-slug="'+esc(p.id)+'" aria-label="Remove '+esc(p.name)+'">✕</button>':'')+'</div>'});
+    if(wl.dataset.h!==h){wl.innerHTML=h;wl.dataset.h=h}
+  }
+  if(host){
+    var b=$('#btnHStart');if(b)b.disabled=ps.length<2;
+    var m=$('#waitMsg');if(m&&(S.room||{}).status==='lobby')m.textContent=ps.length<2?'Waiting for your friends to join…':'Ready when you are! Press Start.';
+  }
+}
+/* Countdown uses the shared start timestamp. If this device's clock is far off, fall back to a local 3-2-1. */
+function beginCountdown(r){
+  S.cd=true;
+  var saved=S.player,resuming=saved.elapsedMs>0&&!saved.done&&saved.round===r.round;
+  if(saved.done&&saved.round===r.round){S.end=endFromDoc(saved,r);showEnd();return}
+  var diff=r.startAt-now();
+  if(Math.abs(diff)>12000)diff=3300;
+  if(diff<-4000&&!resuming){
+    S.cd=false;renderWait();$('#waitMsg').textContent='This round has already started. You’ll join the next one!';return;
+  }
+  var t0=performance.now()+diff;
+  if(resuming){startRoomGame(null,saved.elapsedMs);return}
+  if(diff<=0){startRoomGame(t0);return}
+  var ov=document.createElement('div');ov.className='fullcd';ov.innerHTML='<p class="lead">Get ready!</p><div class="big" style="font:700 12rem var(--f-disp)" id="cdNum"></div>';
+  document.body.appendChild(ov);
+  var lastN=0;
+  var iv=setInterval(function(){
+    var left=t0-performance.now(),n=Math.ceil(left/1000);
+    if(left<=0){clearInterval(iv);ov.remove();Snd.beep(true);startRoomGame(t0);return}
+    if(n!==lastN){lastN=n;$('#cdNum').textContent=n;Snd.beep(false)}
+  },60);
+  S.subs.push(function(){clearInterval(iv);ov.remove()});
+}
+function startRoomGame(t0perf,resumeElapsed){
+  var r=S.room,sp=SPEEDS[r.speed]||SPEEDS[2],p=S.player;
+  startEngine({solo:false,mode:r.mode,words:r.words,cross:sp.cross,limitMs:(r.limitSec||60)*1000,
+    penaltyPer:r.mode==='fastest'?PENALTY_MS:0,seed:(r.seed||1)+r.round*7919,
+    t0perf:t0perf,resumeElapsed:resumeElapsed,resume:(resumeElapsed?p:null)});
+}
+
+/* =====================================================================
+   GAME ENGINE (students and solo practice)
+   ===================================================================== */
+function gameHTML(){
+  return '<section class="game">'
+   +'<div class="hud">'
+     +'<div class="stat"><span>Score</span><b id="hScore">0</b></div>'
+     +'<div class="stat"><span>Streak</span><b id="hStreak">0</b></div>'
+     +'<div class="stat"><span id="hL3">Time</span><b id="hTime">0:00</b></div>'
+     +'<div class="stat"><span id="hL4">Words left</span><b id="hLeft">0</b></div>'
+     +'<div class="hudbtns"><button class="chip" id="hHear" data-act="hear" aria-pressed="'+(S.hear?'true':'false')+'">Hear the word</button>'
+     +(G.solo?'<button class="chip" id="hPause" data-act="pause">Pause</button>':'')
+     +((G.solo||isHost())?'':'<button class="chip" data-act="leave-game" data-confirm>Leave game</button>')+'</div>'
+   +'</div>'
+   +(G.solo?'':'<div class="top3" id="top3" aria-label="Top 3"></div>')
+   +'<div class="field" id="field"></div>'
+   +'<div class="typebar"><input id="typer" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" aria-label="Type the falling word here" placeholder="Type here"><button class="btn blue" data-act="say" aria-label="Hear the lowest word">Hear</button></div>'
+   +'</section>';
+}
+function startEngine(cfg){
+  stopEngine();
+  var res=cfg.resume;
+  G={solo:cfg.solo,mode:cfg.mode,words:cfg.words.slice(),cross:cfg.cross,limitMs:cfg.limitMs||0,penaltyPer:cfg.penaltyPer||0,
+     active:[],queue:[],seqIdx:res?(res.seqIdx||0):0,seed:cfg.seed||1,uid:0,over:false,paused:false,
+     correct:res?res.correct:0,missed:res?res.missed:0,slips:res?res.slips:0,keysOk:res?res.keysOk:0,keysBad:res?res.keysBad:0,
+     streak:0,bestStreak:res?res.bestStreak:0,penaltyMs:res?res.penaltyMs:0,
+     trouble:new Map(),cleared:new Set(res?res.cleared:[]),target:null,typed:'',elapsed:0,dirty:true,
+     maxActive:MAX_ACTIVE,interval:cfg.cross*1000/MAX_ACTIVE,top3Hidden:false,lastSec:-1};
+  if(res)(res.trouble||[]).forEach(function(t){G.trouble.set(t.w,{w:t.w,m:t.m||0,s:t.s||0})});
+  var order=shuffled(G.words,G.seed);
+  if(G.mode!=='most'){
+    G.total=G.words.length;
+    G.queue=order.filter(function(w){return !G.cleared.has(w.toLowerCase())});
+  }
+  G.order=order;
+  setView('game',gameHTML());
+  G.field=$('#field');G.typer=$('#typer');
+  G.W=G.field.clientWidth;G.H=G.field.clientHeight;
+  G.ro=new ResizeObserver(function(){G.W=G.field.clientWidth;G.H=G.field.clientHeight});G.ro.observe(G.field);
+  if(G.mode==='most'){$('#hL4').textContent='Missed'}
+  if(G.solo)$('#hL3').textContent='Time';
+  G.typer.addEventListener('input',onTyper);
+  G.typer.addEventListener('keydown',function(e){if(e.key==='Enter')e.preventDefault()});
+  G.typer.focus();
+  var perf=performance.now();
+  G.t0=cfg.resumeElapsed?perf-cfg.resumeElapsed:(cfg.t0perf||perf);
+  G.last=perf;G.nextSpawn=perf+400;
+  if(!G.solo){G.writer=S.writer;G.pushTimer=setInterval(function(){if(G.dirty&&!G.over){G.dirty=false;pushStats(false)}},2000);updateTop3()}
+  G.raf=requestAnimationFrame(loop);
+}
+function stopEngine(){
+  if(!G)return;
+  G.over=true;cancelAnimationFrame(G.raf);clearInterval(G.pushTimer);
+  try{if(G.ro)G.ro.disconnect()}catch(e){}
+  try{speechSynthesis.cancel()}catch(e){}
+}
+function seqWord(i){
+  var n=G.order.length,cyc=Math.floor(i/n),pos=i%n;
+  if(cyc===0)return G.order[pos];
+  return shuffled(G.words,G.seed+cyc*31)[pos];
+}
+function makeWordEl(word){
+  var el=document.createElement('div');el.className='word';
+  el.innerHTML='<div class="wi">'+Array.from(word).map(function(c){return '<span class="ch">'+esc(c)+'</span>'}).join('')+'</div>';
+  el.style.transform='translate(0,-300px)';
+  return el;
+}
+/* Place a new word at a random x that does not overlap words still near the top */
+function spawn(ts){
+  if(G.active.length>=G.maxActive){G.nextSpawn=ts+300;return}
+  var word=null;
+  if(G.mode==='most'){
+    for(var k=0;k<4;k++){
+      var w=seqWord(G.seqIdx);
+      if(G.words.length<=G.maxActive||!G.active.some(function(a){return a.lower===w.toLowerCase()})){word=w;break}
+      G.seqIdx++;
+    }
+    if(!word)word=seqWord(G.seqIdx);
+  }else word=G.queue[0];
+  if(!word){G.nextSpawn=ts+400;return}
+  var el=makeWordEl(word);G.field.appendChild(el);
+  var w2=el.offsetWidth,h=el.offsetHeight,x=null;
+  for(var t=0;t<30;t++){
+    var cx=8+Math.random()*Math.max(0,G.W-w2-16);
+    var clash=G.active.some(function(a){return a.y<h*2.4&&cx<a.x+a.w+14&&cx+w2+14>a.x});
+    if(!clash){x=cx;break}
+  }
+  if(x===null){el.remove();G.nextSpawn=ts+250;return}
+  if(G.mode==='most')G.seqIdx++;else G.queue.shift();
+  var item={word:word,lower:word.toLowerCase(),el:el,x:x,y:-h-4,w:w2,h:h,slipped:false,spans:$$('.ch',el)};
+  el.style.transform='translate('+x+'px,'+item.y+'px)';
+  G.active.push(item);
+  if(S.hear)speak(word);
+  G.nextSpawn=ts+G.interval*(0.85+Math.random()*0.3);
+  if(G.active.length===1)G.nextSpawn=Math.min(G.nextSpawn,ts+1500);
+}
+function loop(ts){
+  if(!G||G.over)return;
+  G.raf=requestAnimationFrame(loop);
+  if(G.paused){G.last=ts;return}
+  var dt=Math.min(0.08,(ts-G.last)/1000);G.last=ts;
+  G.elapsed=Math.max(0,ts-G.t0);
+  if(ts>=G.nextSpawn)spawn(ts);
+  var v=G.H/G.cross;
+  for(var i=G.active.length-1;i>=0;i--){
+    var w=G.active[i];w.y+=v*dt;
+    w.el.style.transform='translate('+w.x+'px,'+w.y+'px)';
+    if(w.y+w.h>=G.H)missWord(w);
+  }
+  hud();
+  if(G.mode==='most'){
+    var left=G.limitMs-G.elapsed;
+    if(!G.solo&&!G.top3Hidden&&left<=10000){G.top3Hidden=true;updateTop3()}  // suspense: hide Top 3 for the last 10 seconds
+    if(left<=0)endGame('time');
+  }else if(!G.queue.length&&!G.active.length)endGame('cleared');
+}
+function hud(){
+  var sec=Math.floor(G.elapsed/1000);
+  if(sec!==G.lastSec||true){
+    G.lastSec=sec;
+    $('#hScore').textContent=G.correct;$('#hStreak').textContent=G.streak;
+    if(G.mode==='most'){$('#hTime').textContent=fmtTime(G.limitMs-G.elapsed);$('#hLeft').textContent=G.missed}
+    else{$('#hTime').textContent=fmtTime(G.elapsed+G.penaltyMs,true);$('#hLeft').textContent=G.queue.length+G.active.length}
+  }
+}
+function addTrouble(word,kind){
+  var t=G.trouble.get(word);if(!t){t={w:word,m:0,s:0};G.trouble.set(word,t)}
+  t[kind]++;
+}
+function shake(el){el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');setTimeout(function(){el.classList.remove('shake')},400)}
+function setTarget(t,n){
+  if(G.target&&G.target!==t){G.target.el.classList.remove('target');G.target.spans.forEach(function(s){s.classList.remove('hit')})}
+  G.target=t;
+  if(t){t.el.classList.add('target');t.spans.forEach(function(s,i){s.classList.toggle('hit',i<n)})}
+}
+function lowest(){var b=null;G.active.forEach(function(a){if(!b||a.y>b.y)b=a});return b}
+/* Typing: case-insensitive, matched letters highlight, a wrong letter is simply not accepted (gentle shake, no penalty). */
+function onTyper(){
+  if(!G||G.over||G.paused){G&&G.typer&&(G.typer.value='');return}
+  var v=G.typer.value.toLowerCase().replace(/^\s+/,'');
+  if(!v){setTarget(null);G.typed='';G.typer.value='';return}
+  var cands=G.active.filter(function(w){return w.lower.indexOf(v)===0});
+  if(!cands.length){
+    G.keysBad++;G.dirty=true;Snd.oops();
+    if(G.target){if(!G.target.slipped){G.target.slipped=true;G.slips++;addTrouble(G.target.word,'s')}shake(G.target.el)}
+    G.typer.classList.remove('bad');void G.typer.offsetWidth;G.typer.classList.add('bad');
+    G.typer.value=G.typed;
+    return;
+  }
+  G.keysOk++;
+  var exact=cands.filter(function(w){return w.lower===v}).sort(function(a,b){return b.y-a.y})[0];
+  if(exact){destroy(exact);return}
+  var t=(G.target&&cands.indexOf(G.target)>-1)?G.target:cands.sort(function(a,b){return b.y-a.y})[0];
+  setTarget(t,v.length);G.typed=v;
+}
+function burst(x,y){
+  var cols=['#ffc21a','#1cc2d6','#ffffff','#ff7a59'];
+  for(var i=0;i<9;i++){
+    var s=document.createElement('i');s.className='spark';
+    var a=Math.PI*2*i/9,d=40+Math.random()*30;
+    s.style.cssText='left:'+x+'px;top:'+y+'px;background:'+cols[i%4]+';--dx:'+Math.cos(a)*d+'px;--dy:'+Math.sin(a)*d+'px';
+    G.field.appendChild(s);setTimeout(function(n){return function(){n.remove()}}(s),650);
+  }
+}
+function removeActive(w){var i=G.active.indexOf(w);if(i>-1)G.active.splice(i,1)}
+function destroy(w){
+  removeActive(w);
+  w.el.classList.add('pop');burst(w.x+w.w/2,w.y+w.h/2);
+  setTimeout(function(){w.el.remove()},400);
+  G.correct++;G.streak++;if(G.streak>G.bestStreak)G.bestStreak=G.streak;
+  G.cleared.add(w.lower);G.dirty=true;
+  G.target=null;G.typed='';G.typer.value='';
+  Snd.pop();
+  if(!G.active.length)G.nextSpawn=Math.min(G.nextSpawn,performance.now()+500);
+}
+function missWord(w){
+  removeActive(w);
+  w.el.classList.add('splash');setTimeout(function(){w.el.remove()},450);
+  G.missed++;G.streak=0;addTrouble(w.word,'m');G.dirty=true;Snd.miss();
+  if(G.mode!=='most'){
+    G.queue.push(w.word);                       // returns later
+    if(G.penaltyPer){G.penaltyMs+=G.penaltyPer;floater('+3s',w.x)}
+  }
+  if(G.target===w){G.target=null}
+  // clear typed text if it no longer matches anything on screen
+  var v=G.typer.value.toLowerCase();
+  if(v&&!G.active.some(function(a){return a.lower.indexOf(v)===0})){G.typer.value='';G.typed='';setTarget(null)}
+}
+function floater(text,x){
+  var f=document.createElement('div');f.className='floater';f.textContent=text;
+  f.style.cssText='left:'+Math.max(8,Math.min(x,G.W-70))+'px;bottom:14px';G.field.appendChild(f);setTimeout(function(){f.remove()},1000);
+}
+/* Write this student's own record (only ever their own document) */
+function buildDoc(done){
+  var total=G.total||0,cl=G.cleared.size;
+  return {name:S.player.name,token:CLIENT_ID,round:S.player.round,joinedAt:S.player.joinedAt,lastSeen:now(),
+    correct:G.correct,missed:G.missed,slips:G.slips,keysOk:G.keysOk,keysBad:G.keysBad,bestStreak:G.bestStreak,
+    progress:G.mode==='most'?Math.min(1,G.elapsed/G.limitMs):(total?Math.min(1,cl/total):0),
+    done:!!done,
+    timeMs:done?(G.mode==='most'?G.limitMs:Math.round(G.elapsed+G.penaltyMs)):0,
+    elapsedMs:Math.round(G.elapsed),penaltyMs:G.penaltyMs,seqIdx:G.seqIdx,
+    trouble:Array.from(G.trouble.values()),
+    cleared:G.mode==='fastest'?Array.from(G.cleared):[]};
+}
+function pushStats(done){if(!G||G.solo)return Promise.resolve();var d=buildDoc(done);S.player=d;return G.writer.write(d)}
+/* Time label helper for the end screen */
+function endFromDoc(d,room){
+  return {solo:false,mode:room.mode,correct:d.correct,missed:d.missed,keysOk:d.keysOk,keysBad:d.keysBad,bestStreak:d.bestStreak,
+    timeMs:d.timeMs,done:d.done,trouble:d.trouble||[]};
+}
+async function endGame(reason){
+  if(!G||G.over)return;
+  G.over=true;cancelAnimationFrame(G.raf);clearInterval(G.pushTimer);
+  try{G.ro.disconnect()}catch(e){}
+  G.active.forEach(function(w){w.el.remove()});
+  var completed=(reason==='time'||reason==='cleared');
+  var timeMs=G.mode==='most'?(completed?G.limitMs:Math.round(G.elapsed)):Math.round(G.elapsed+G.penaltyMs);
+  S.end={solo:G.solo,mode:G.mode,correct:G.correct,missed:G.missed,keysOk:G.keysOk,keysBad:G.keysBad,bestStreak:G.bestStreak,
+    timeMs:timeMs,done:completed,trouble:Array.from(G.trouble.values())};
+  S.podium=false;
+  Snd.win();
+  showEnd();
+  if(!G.solo){
+    G.elapsed=G.mode==='most'?G.limitMs:G.elapsed;
+    var d=buildDoc(completed);d.timeMs=completed?timeMs:0;S.player=d;
+    await G.writer.write(d);
+  }
+}
+
+/* ---------- Top 3 strip (room games only) ---------- */
+function updateTop3(){
+  var el=$('#top3');if(!el||!S.room)return;
+  if(G&&G.top3Hidden){el.innerHTML='<span>Top 3 hidden for the final sprint!</span>';return}
+  var cur=S.players.filter(function(p){return p.round===S.room.round});
+  var top=rankPlayers(cur,S.room.mode).slice(0,3);
+  el.innerHTML=top.length?top.map(function(p,i){return '<span>'+(i+1)+'. '+esc(p.name)+' · '+(p.correct||0)+'</span>'}).join(''):'<span>Top 3 will show up here</span>';
+}
+
+/* =====================================================================
+   END SCREEN
+   ===================================================================== */
+function confetti(){
+  var box=document.createElement('div');box.className='confetti';var cols=['#ffc21a','#1cc2d6','#0b62a8','#ff7a59','#0e8f4b','#ffffff'];
+  var h='';for(var i=0;i<46;i++)h+='<i style="left:'+Math.random()*100+'%;background:'+cols[i%6]+';animation-duration:'+(2.5+Math.random()*2.5)+'s;animation-delay:'+Math.random()*1.2+'s"></i>';
+  box.innerHTML=h;document.body.appendChild(box);setTimeout(function(){box.remove()},7000);
+}
+function headline(acc){
+  if(acc>=0.9)return 'Spelling superstar!';
+  if(acc>=0.7)return 'Brilliant work!';
+  if(acc>=0.5)return 'Great effort!';
+  return 'You kept going – well done!';
+}
+function showEnd(){
+  var e=S.end,tot=e.correct+e.missed,acc=tot?e.correct/tot:0;
+  var trouble=e.trouble.filter(function(t){return t.m>0||t.s>0}).sort(function(a,b){return (b.m*2+b.s)-(a.m*2+a.s)});
+  var timeLabel=e.mode==='most'?'Time played':'Your time';
+  setView('end','<section class="center">'
+    +'<h1>'+headline(acc)+'</h1>'
+    +(e.solo?'':'<div id="rankBox"><div class="medal">Waiting for classmates…</div></div>')
+    +'<div class="stats4">'
+      +'<div class="stat"><span>Words right</span><b>'+e.correct+'</b></div>'
+      +'<div class="stat"><span>Accuracy</span><b>'+(tot?Math.round(acc*100)+'%':'–')+'</b></div>'
+      +'<div class="stat"><span>'+timeLabel+'</span><b>'+fmtTime(e.timeMs,e.mode!=='most')+'</b></div>'
+      +'<div class="stat"><span>Best streak</span><b>'+e.bestStreak+'</b></div>'
+    +'</div>'
+    +'<div id="podiumBox" style="width:100%"></div>'
+    +'<div class="card stack" style="width:100%;text-align:left"><h3>Words to practise</h3>'
+      +(trouble.length?'<div class="practise">'+trouble.map(function(t){return '<span>'+esc(t.w)+'</span>'}).join('')+'</div>'
+        :'<p>No tricky words this time – fantastic spelling!</p>')
+      +(trouble.length?'<button class="btn primary" data-act="practise-missed">Practise missed words</button>':'')
+    +'</div>'
+    +'<div class="row" style="justify-content:center">'
+      +'<div id="hostBox"></div>'
+      +(e.solo?'<button class="btn blue" data-act="solo-again">Play again</button>':'')
+      +'<button class="btn" data-act="'+(e.solo?'solo':'home')+'">'+(e.solo?'Change words or speed':'Finish')+'</button>'
+    +'</div>'
+    +'</section>');
+  S.missedForPractice=trouble.map(function(t){return t.w});
+  confetti();
+  if(!e.solo)updateEndRank();
+}
+/* Rank is provisional until the teacher's room is marked finished */
+function updateEndRank(){
+  updateHostBox();
+  var box=$('#rankBox');if(!box||!S.room||!S.end)return;
+  var cur=S.players.filter(function(p){return p.round===S.room.round});
+  var ranked=rankPlayers(cur,S.room.mode);
+  var me=ranked.filter(function(p){return p.id===S.slug})[0];
+  var final=S.room.status==='ended';
+  if(!me){return}
+  var txt=final?('You finished #'+me._rank+' of '+ranked.length+'!'):('Rank so far: #'+me._rank+' of '+ranked.length+' – waiting for classmates');
+  box.innerHTML='<div class="medal">'+esc(txt)+'</div>';
+  if(final&&!S.podium){
+    S.podium=true;
+    if(me._rank<=3){
+      var order=[2,1,3],pods='';
+      order.forEach(function(rk,i){
+        var p=ranked.filter(function(x){return x._rank===rk})[0];if(!p)return;
+        pods+='<div class="pl p'+rk+(p.id===S.slug?' me':'')+'" style="animation-delay:'+(i*.25)+'s"><div class="nm">'+esc(p.name)+'</div><div class="blk">'+rk+'</div></div>';
+      });
+      $('#podiumBox').innerHTML='<div class="card center" style="gap:.6rem;width:100%"><h3>You made the podium!</h3><div class="podium">'+pods+'</div></div>';
+      Snd.win();confetti();
+    }
+  }
+}
+
+/* =====================================================================
+   SOLO PRACTICE
+   ===================================================================== */
+function renderSolo(){
+  leaveRoom();
+  var opts=[{id:'starter',name:'Starter words ('+STARTER.length+')'}];
+  if(S.missedForPractice&&S.missedForPractice.length)opts.unshift({id:'missed',name:'My missed words ('+S.missedForPractice.length+')'});
+  S.lists.forEach(function(l){opts.push({id:'l:'+l.id,name:l.name+' ('+l.count+')'})});
+  var cur=S.soloSel||opts[0].id;
+  if(!opts.some(function(o){return o.id===cur}))cur=opts[0].id;
+  S.soloSel=cur;S.soloSpeed=S.soloSpeed==null?2:S.soloSpeed;
+  setView('solo','<section class="form stack">'
+    +'<h2>Solo practice</h2>'
+    +'<div><label for="soWords">Pick a word list</label><select id="soWords">'+opts.map(function(o){return '<option value="'+esc(o.id)+'"'+(o.id===cur?' selected':'')+'>'+esc(o.name)+'</option>'}).join('')+'</select></div>'
+    +'<div><label>How fast should the words fall?</label><div class="speeds">'
+      +SPEEDS.map(function(s,i){return '<button class="opt'+(i===S.soloSpeed?' on':'')+'" data-act="solo-speed" data-i="'+i+'"><span class="em">'+s.em+'</span><b>'+s.name+'</b></button>'}).join('')
+    +'</div></div>'
+    +'<button class="btn primary" data-act="solo-go">Start</button>'
+    +'<button class="btn" data-act="back-student">Back</button>'
+    +'</section>');
+  $('#soWords').addEventListener('change',function(e){S.soloSel=e.target.value});
+  ensureLists();
+}
+function soloWords(){
+  var id=S.soloSel;
+  if(id==='missed')return S.missedForPractice.slice();
+  if(id&&id.indexOf('l:')===0){var l=S.lists.filter(function(x){return x.id===id.slice(2)})[0];if(l)return l.words.slice()}
+  return STARTER.slice();
+}
+function startSolo(words){
+  S.end=null;
+  startEngine({solo:true,mode:'solo',words:words,cross:SPEEDS[S.soloSpeed].cross,limitMs:0,penaltyPer:0,seed:Math.floor(Math.random()*1e9)});
+}
+function togglePause(){
+  if(!G||!G.solo||G.over)return;
+  var field=G.field,b=$('#hPause');
+  if(!G.paused){
+    G.paused=true;G.pausedAt=performance.now();b.textContent='Resume';
+    var ov=document.createElement('div');ov.className='overlay';ov.id='pauseOv';ov.innerHTML='<h2>Paused</h2><button class="btn primary" data-act="pause">Resume</button>';field.appendChild(ov);
+  }else{
+    G.t0+=performance.now()-G.pausedAt;G.paused=false;b.textContent='Pause';
+    var o=$('#pauseOv');if(o)o.remove();G.typer.focus();
+  }
+}
+
+/* =====================================================================
+   TEACHER: gate, library, rooms
+   ===================================================================== */
+
+/* ----- shared word-list subscription (solo practice and student-hosted rooms) ----- */
+function ensureLists(){
+  if(!DB||S.soloWatch)return;S.soloWatch=true;
+  S.homeSubs.push(watch(function(){return DB.collection('lists')},function(snap){
+    var next=snap.docs.map(function(d){return Object.assign({id:d.id},d.data())});
+    var sig=function(a){return a.map(function(l){return l.id+':'+(l.updatedAt||0)}).sort().join('|')};
+    var changed=sig(next)!==sig(S.lists);
+    S.lists=next;
+    if(!changed)return;
+    if(S.view==='solo')renderSolo();else if(S.view==='hostsetup')renderHostSetup();
+  }));
+}
+
+/* =====================================================================
+   STUDENT-HOSTED ROOMS: a student creates a room and runs it for friends.
+   Same room document as a teacher room, plus hostToken/hostName. The host plays too.
+   ===================================================================== */
+function isHost(){return !!(S.room&&S.room.hostToken&&S.room.hostToken===CLIENT_ID)}
+function hostWords(id){
+  if(id&&id.indexOf('l:')===0){var l=S.lists.filter(function(x){return x.id===id.slice(2)})[0];if(l)return {name:l.name,words:l.words.slice()}}
+  return {name:'Starter words',words:STARTER.slice()};
+}
+function renderHostSetup(){
+  var n0=$('#hsName');
+  var h=S.hs||(S.hs={name:store.get('sp_name',''),listId:null,mode:'most',speed:2,limit:2});
+  if(n0&&S.view==='hostsetup')h.name=n0.value;
+  if(S.view!=='hostsetup')leaveRoom();
+  ensureLists();
+  var opts=S.lists.map(function(l){return {id:'l:'+l.id,name:l.name+' ('+l.count+' words)'}});
+  opts.push({id:'starter',name:'Starter words ('+STARTER.length+' words)'});
+  if(!h.listId||!opts.some(function(o){return o.id===h.listId}))h.listId=opts[0].id;
+  setView('hostsetup','<section class="form stack" style="max-width:760px">'
+    +'<h2>Host a room for your friends</h2>'
+    +'<p class="muted">You get a room code to share. Your friends type it in, and you press Start when everyone is ready.</p>'
+    +'<div id="hsErr" hidden></div>'
+    +'<div><label for="hsName">Your first name or nickname</label><input id="hsName" type="text" maxlength="14" autocomplete="off" spellcheck="false" value="'+esc(h.name)+'"></div>'
+    +'<div><label for="hsList">Word list</label><select id="hsList">'+opts.map(function(o){return '<option value="'+esc(o.id)+'"'+(o.id===h.listId?' selected':'')+'>'+esc(o.name)+'</option>'}).join('')+'</select></div>'
+    +'<div><label>Game mode</label><div class="opts">'
+      +'<button class="opt'+(h.mode==='most'?' on':'')+'" data-act="hs-mode" data-v="most"><b>Most words</b>Timed. The most words destroyed wins.</button>'
+      +'<button class="opt'+(h.mode==='fastest'?' on':'')+'" data-act="hs-mode" data-v="fastest"><b>Fastest time</b>Everyone clears the same list. Sunk words add 3 seconds.</button>'
+    +'</div></div>'
+    +'<div><label>Falling speed</label><div class="speeds">'+SPEEDS.map(function(s,i){return '<button class="opt'+(i===h.speed?' on':'')+'" data-act="hs-speed" data-i="'+i+'"><span class="em">'+s.em+'</span><b>'+s.name+'</b></button>'}).join('')+'</div></div>'
+    +(h.mode==='most'?'<div><label>Time limit</label><div class="speeds">'+[1,2,3].map(function(m){return '<button class="opt'+(m===h.limit?' on':'')+'" data-act="hs-limit" data-v="'+m+'"><b>'+m+(m===1?' minute':' minutes')+'</b></button>'}).join('')+'</div></div>':'')
+    +'<button class="btn primary" id="hsGo" data-act="hs-create">Create room</button>'
+    +'<button class="btn" data-act="back-student">Back</button></section>');
+  $('#hsList').addEventListener('change',function(e){h.listId=e.target.value});
+  $('#hsName').addEventListener('keydown',function(e){if(e.key==='Enter')createHostRoom()});
+}
+function hsErr(m){var e=$('#hsErr');if(!e)return;e.hidden=false;e.className='err';e.textContent=m}
+async function createHostRoom(){
+  var h=S.hs,name=cleanName($('#hsName').value);h.name=name;
+  if(!DB){hsErr('Rooms are not available in this view.');return}
+  if(!name){hsErr('Please type your first name or a nickname.');return}
+  var btn=$('#hsGo');btn.disabled=true;btn.textContent='Creating…';
+  try{
+    var wl=hostWords(h.listId),code=null;
+    for(var i=0;i<15;i++){
+      var c=randCode(),s=await dbRetry(function(){return DB.doc('rooms/'+c).get()});
+      if(!s.exists||s.data().expiresAt<now()){code=c;break}
+    }
+    if(!code){hsErr('Couldn’t find a free room code. Please try again.');return}
+    var room={code:code,listId:h.listId,listName:wl.name,words:wl.words,mode:h.mode,speed:h.speed,limitSec:h.limit*60,
+      status:'lobby',round:1,startAt:0,seed:Math.floor(Math.random()*1e9),removed:[],createdAt:now(),expiresAt:now()+DAY,
+      hostToken:CLIENT_ID,hostName:name};
+    await dbRetry(function(){return DB.doc('rooms/'+code).set(room)});
+    var slug=slugOf(name),doc=newPlayerDoc(name,1);
+    await dbRetry(function(){return DB.doc('rooms/'+code+'/players/'+slug).set(doc)});
+    S.role='student';S.code=code;S.room=room;S.player=doc;S.slug=slug;S.joinedAt=now();S.players=[];S.podium=false;S.cd=false;
+    S.writer=makeWriter('rooms/'+code+'/players/'+slug);
+    store.set('sp_name',name);store.set('sp_session',{code:code,name:name});
+    studentWatch();renderWait();
+  }catch(e){console.warn(e);hsErr('Something went wrong. Please try again.');var b=$('#hsGo');if(b){b.disabled=false;b.textContent='Create room'}}
+}
+async function hostStart(){
+  var b=$('#btnHStart');if(b)b.disabled=true;
+  await dbRetry(function(){return DB.doc('rooms/'+S.code).update({status:'running',startAt:now()+3500})});
+}
+/* The host's device ends the round when everyone has finished or the time is up (no teacher is watching). */
+function hostTick(){
+  var r=S.room;if(!r||!isHost()||r.status!=='running'||S.hostEnding)return;
+  var el=now()-r.startAt;
+  var cur=S.players.filter(function(p){return p.round===r.round});
+  var allDone=cur.length>0&&cur.every(function(p){return p.done});
+  var timeUp=r.mode==='most'&&el>r.limitSec*1000+6000;
+  if(allDone||timeUp){
+    S.hostEnding=true;
+    DB.doc('rooms/'+S.code).update({status:'ended',endedAt:now()}).catch(function(){}).then(function(){S.hostEnding=false});
+  }
+}
+function updateHostBox(){
+  var b=$('#hostBox');if(!b||!S.room)return;
+  if(!isHost()){b.innerHTML='';return}
+  var st=S.room.status;
+  if(b.dataset.h!==st){
+    b.innerHTML=st==='ended'?'<button class="btn primary" data-act="host-again">Play again with the same room</button>':'<button class="btn danger" data-act="host-end" data-confirm>End game for everyone</button>';
+    b.dataset.h=st;
+  }
+}
+async function renderTeacherGate(){
+  leaveRoom();clearHome();
+  if(!DB){setView('tgate','<section class="form stack"><h2>Teacher area</h2><div class="err">Can’t reach the game server. Check the Wi-Fi and reload the page.</div><button class="btn" data-act="home">Back</button></section>');return}
+  if(sess.get('sp_t',false)){renderTeacherHome();return}
+  setView('tgate','<section class="form stack"><h2>Teacher area</h2><p class="muted">Checking…</p></section>');
+  var has=false;
+  try{var s=await dbRetry(function(){return DB.doc('settings/school').get()});has=s.exists&&!!s.data().pinHash;S.pinHash=has?s.data().pinHash:null}
+  catch(e){setView('tgate','<section class="form stack"><h2>Teacher area</h2><div class="err">We couldn’t reach shared storage. Please try again.</div><button class="btn" data-act="role-teacher">Try again</button></section>');return}
+  setView('tgate','<section class="form stack">'
+    +'<h2>'+(has?'Enter the teacher PIN':'Create your school PIN')+'</h2>'
+    +(has?'<p class="muted">Ask a colleague if you have forgotten it.</p>':'<p class="muted">All teachers will share this PIN. Students won’t be able to open the teacher area without it.</p>')
+    +'<div id="gErr" hidden></div>'
+    +'<div><label for="gPin">'+(has?'PIN':'Choose a PIN (at least 4 characters)')+'</label><input id="gPin" type="password" autocomplete="off" inputmode="text"></div>'
+    +(has?'':'<div><label for="gPin2">Type it again</label><input id="gPin2" type="password" autocomplete="off"></div>')
+    +'<button class="btn primary" data-act="gate-go">'+(has?'Open teacher area':'Save PIN and continue')+'</button>'
+    +'<button class="btn" data-act="home">Back</button></section>');
+  $('#gPin').focus();
+  $$('#gPin,#gPin2').forEach(function(i){i.addEventListener('keydown',function(e){if(e.key==='Enter')gateGo()})});
+}
+function gateErr(m){var e=$('#gErr');e.hidden=false;e.className='err';e.textContent=m}
+async function gateGo(){
+  var pin=$('#gPin').value;
+  if(S.pinHash){
+    if(await hashPin(pin)!==S.pinHash){gateErr('That PIN doesn’t match. Please try again.');return}
+  }else{
+    if(pin.length<4){gateErr('Please choose a PIN with at least 4 characters.');return}
+    if(pin!==$('#gPin2').value){gateErr('The two PINs are different. Please type them again.');return}
+    try{var ph=await hashPin(pin);await dbRetry(function(){return DB.doc('settings/school').set({pinHash:ph,createdAt:now()})})}catch(e){gateErr('Couldn’t save the PIN. Please try again.');return}
+  }
+  sess.set('sp_t',true);renderTeacherHome();
+}
+function clearHome(){S.homeSubs.forEach(function(f){try{f()}catch(e){}});S.homeSubs=[];S.soloWatch=false}
+
+function renderTeacherHome(){
+  leaveRoom();clearHome();
+  setView('thome','<section class="stack">'
+    +'<div class="row between"><h2>Teacher area</h2><div class="row"><button class="btn small" data-act="pin-change">Change PIN</button><button class="btn small" data-act="t-lock">Lock</button></div></div>'
+    +'<div id="pinbox" hidden></div>'
+    +'<div><div class="tabs"><button class="tab'+(S.tab==='lists'?' on':'')+'" data-act="tab" data-tab="lists">Word lists</button><button class="tab'+(S.tab==='rooms'?' on':'')+'" data-act="tab" data-tab="rooms">Game rooms</button></div>'
+    +'<div class="panel stack">'
+      +'<div id="tabLists"'+(S.tab==='lists'?'':' hidden')+' class="stack"><div class="row between"><p class="muted">Shared by every teacher at your school.</p><button class="btn primary" data-act="list-new">New word list</button></div><div id="editor" hidden></div><div id="lib" class="lists"></div></div>'
+      +'<div id="tabRooms"'+(S.tab==='rooms'?'':' hidden')+' class="stack"><div class="row between"><p class="muted">Rooms close by themselves after a day.</p><button class="btn primary" data-act="setup-new">New game room</button></div><div id="roomsBox" class="lists"></div></div>'
+    +'</div></div></section>');
+  renderLib();renderRoomsList();
+  S.homeSubs.push(watch(function(){return DB.collection('lists')},function(snap){
+    S.lists=snap.docs.map(function(d){return Object.assign({id:d.id},d.data())});renderLib();
+  }));
+  S.homeSubs.push(watch(function(){return DB.collection('rooms')},function(snap){
+    S.rooms=snap.docs.map(function(d){return Object.assign({id:d.id},d.data())});renderRoomsList();
+  }));
+  cleanupExpired();
+}
+function renderLib(){
+  var el=$('#lib');if(!el)return;
+  var ls=S.lists.slice().sort(function(a,b){return (b.updatedAt||0)-(a.updatedAt||0)});
+  if(!ls.length){el.innerHTML='<div class="card stack" style="grid-column:1/-1"><h3>No word lists yet</h3><p>Make your first list, or start with a sample to see how it works.</p><div class="row"><button class="btn primary" data-act="list-new">New word list</button><button class="btn" data-act="list-sample">Add a sample list</button></div></div>';return}
+  el.innerHTML=ls.map(function(l){
+    return '<div class="lcard"><h3>'+esc(l.name)+'</h3>'
+      +'<p class="muted">'+l.count+' words · edited '+esc(fmtDate(l.updatedAt||0))+'</p>'
+      +'<div class="words">'+l.words.slice(0,6).map(function(w){return '<span>'+esc(w)+'</span>'}).join('')+(l.words.length>6?'<span>+'+(l.words.length-6)+' more</span>':'')+'</div>'
+      +'<div class="row"><button class="btn blue small" data-act="setup-new" data-id="'+esc(l.id)+'">Make a game</button>'
+      +'<button class="btn small" data-act="list-edit" data-id="'+esc(l.id)+'">Edit</button>'
+      +'<button class="btn small" data-act="list-dup" data-id="'+esc(l.id)+'">Duplicate</button>'
+      +'<button class="btn small" data-act="list-del" data-id="'+esc(l.id)+'" data-confirm>Delete</button></div></div>';
+  }).join('');
+}
+function renderRoomsList(){
+  var el=$('#roomsBox');if(!el)return;
+  var rs=S.rooms.filter(function(r){return r.expiresAt>now()}).sort(function(a,b){return b.createdAt-a.createdAt});
+  if(!rs.length){el.innerHTML='<div class="card" style="grid-column:1/-1"><p>No game rooms right now. Press “New game room” to start one.</p></div>';return}
+  var label={lobby:'Waiting for students',running:'Game in progress',ended:'Finished'};
+  el.innerHTML=rs.map(function(r){
+    return '<div class="lcard"><h3 style="font-size:2rem;letter-spacing:.15em">'+esc(r.code)+'</h3>'
+      +'<p>'+esc(r.listName)+' · '+(r.mode==='most'?'Most words':'Fastest time')+(r.hostName?' · hosted by '+esc(r.hostName):'')+'</p>'
+      +'<p class="muted">'+esc(label[r.status]||r.status)+' · started '+esc(fmtDate(r.createdAt))+'</p>'
+      +'<div class="row"><button class="btn blue small" data-act="room-open" data-code="'+esc(r.code)+'">Open</button>'
+      +'<button class="btn small" data-act="room-close" data-code="'+esc(r.code)+'" data-confirm>Close room</button></div></div>';
+  }).join('');
+}
+/* Expired rooms (older than a day) are removed together with their players */
+async function cleanupExpired(){
+  try{
+    var snap=await DB.collection('rooms').get();
+    var old=snap.docs.filter(function(d){return (d.data().expiresAt||0)<now()}).slice(0,8);
+    for(var i=0;i<old.length;i++)await deleteRoom(old[i].id);
+  }catch(e){}
+}
+async function deleteRoom(code){
+  try{var ps=await DB.collection('rooms/'+code+'/players').get();for(var i=0;i<ps.docs.length;i++)await DB.doc('rooms/'+code+'/players/'+ps.docs[i].id).delete()}catch(e){}
+  await DB.doc('rooms/'+code).delete();
+}
+
+/* ----- list editor ----- */
+function openEditor(id){
+  var l=id?S.lists.filter(function(x){return x.id===id})[0]:null;
+  S.editId=l?l.id:null;
+  var ed=$('#editor');ed.hidden=false;
+  ed.innerHTML='<div class="card stack" style="border-color:var(--sea)"><h3>'+(l?'Edit word list':'New word list')+'</h3>'
+    +'<div><label for="edName">List name</label><input id="edName" type="text" maxlength="50" placeholder="e.g. P4 Week 5" value="'+esc(l?l.name:'')+'"></div>'
+    +'<div><label for="edWords">Words (one per line or separated by commas)</label><textarea id="edWords" placeholder="because&#10;friend&#10;neighbour">'+esc(l?l.words.join('\n'):'')+'</textarea></div>'
+    +'<p class="muted" id="edInfo"></p><div class="words" id="edPrev"></div><div id="edErr" hidden></div>'
+    +'<div class="row"><button class="btn primary" data-act="list-save">Save list</button><button class="btn" data-act="list-cancel">Cancel</button></div></div>';
+  $('#edWords').addEventListener('input',edPreview);edPreview();$('#edName').focus();ed.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function edPreview(){
+  var raw=$('#edWords').value,w=cleanWords(raw);
+  var tokens=raw.split(/[\n\r,;\t]+/).filter(function(x){return x.trim()}).length;
+  $('#edInfo').textContent=w.length+(w.length===1?' word':' words')+' ready'+(tokens>w.length?' ('+(tokens-w.length)+' duplicate or too-long removed)':'');
+  $('#edPrev').innerHTML=w.slice(0,40).map(function(x){return '<span>'+esc(x)+'</span>'}).join('')+(w.length>40?'<span>+'+(w.length-40)+' more</span>':'');
+}
+async function saveList(){
+  var name=$('#edName').value.replace(/\s+/g,' ').trim(),words=cleanWords($('#edWords').value);
+  var err=$('#edErr');
+  if(!name||!words.length){err.hidden=false;err.className='err';err.textContent=!name?'Please give the list a name.':'Please add at least one word.';return}
+  var id=S.editId||('l'+now().toString(36)+Math.random().toString(36).slice(2,5));
+  var prev=S.lists.filter(function(x){return x.id===id})[0];
+  try{await dbRetry(function(){return DB.doc('lists/'+id).set({name:name,words:words,count:words.length,createdAt:prev?prev.createdAt:now(),updatedAt:now()})})}
+  catch(e){err.hidden=false;err.className='err';err.textContent='Couldn’t save. Please try again.';return}
+  $('#editor').hidden=true;toast('Saved “'+name+'”');
+}
+async function dupList(id){
+  var l=S.lists.filter(function(x){return x.id===id})[0];if(!l)return;
+  var nid='l'+now().toString(36)+Math.random().toString(36).slice(2,5);
+  await dbRetry(function(){return DB.doc('lists/'+nid).set({name:l.name+' (copy)',words:l.words,count:l.count,createdAt:now(),updatedAt:now()})});toast('Duplicated');
+}
+async function sampleList(){
+  var nid='l'+now().toString(36);
+  await dbRetry(function(){return DB.doc('lists/'+nid).set({name:'Sample: tricky words',words:STARTER,count:STARTER.length,createdAt:now(),updatedAt:now()})});
+}
+
+/* ----- room setup & creation ----- */
+function renderSetup(listId){
+  leaveRoom();clearHome();
+  if(!S.setup)S.setup={listId:listId||null,mode:'most',speed:2,limit:2};
+  if(listId)S.setup.listId=listId;
+  var st=S.setup;
+  if(!S.lists.length){
+    DB.collection('lists').get().then(function(snap){S.lists=snap.docs.map(function(d){return Object.assign({id:d.id},d.data())});if(S.view==='setup')renderSetup()});
+  }
+  if(!st.listId&&S.lists.length)st.listId=S.lists[0].id;
+  setView('setup','<section class="form stack" style="max-width:760px">'
+    +'<h2>Create a game room</h2>'
+    +(S.lists.length?'':'<div class="err">You need a word list first. Go back and make one.</div>')
+    +'<div><label for="suList">Word list</label><select id="suList">'+S.lists.map(function(l){return '<option value="'+esc(l.id)+'"'+(l.id===st.listId?' selected':'')+'>'+esc(l.name)+' ('+l.count+' words)</option>'}).join('')+'</select></div>'
+    +'<div><label>Game mode</label><div class="opts">'
+      +'<button class="opt'+(st.mode==='most'?' on':'')+'" data-act="su-mode" data-v="most"><b>Most words</b>Timed. Words keep falling and the most words destroyed wins. Words that reach the bottom are just missed.</button>'
+      +'<button class="opt'+(st.mode==='fastest'?' on':'')+'" data-act="su-mode" data-v="fastest"><b>Fastest time</b>Everyone clears the same list in the same order. A word that sinks adds 3 seconds and comes back later.</button>'
+    +'</div></div>'
+    +'<div><label>Falling speed</label><div class="speeds">'+SPEEDS.map(function(s,i){return '<button class="opt'+(i===st.speed?' on':'')+'" data-act="su-speed" data-i="'+i+'"><span class="em">'+s.em+'</span><b>'+s.name+'</b></button>'}).join('')+'</div></div>'
+    +(st.mode==='most'?'<div><label>Time limit</label><div class="speeds">'+[1,2,3].map(function(m){return '<button class="opt'+(m===st.limit?' on':'')+'" data-act="su-limit" data-v="'+m+'"><b>'+m+(m===1?' minute':' minutes')+'</b></button>'}).join('')+'</div></div>':'')
+    +'<button class="btn primary" data-act="su-create"'+(S.lists.length?'':' disabled')+'>Create room</button>'
+    +'<button class="btn" data-act="t-back">Back</button></section>');
+  var sel=$('#suList');if(sel)sel.addEventListener('change',function(e){st.listId=e.target.value});
+}
+async function createRoom(){
+  var st=S.setup,l=S.lists.filter(function(x){return x.id===st.listId})[0];if(!l)return;
+  var code=null;
+  for(var i=0;i<15;i++){
+    var c=randCode(),s=await dbRetry(function(){return DB.doc('rooms/'+c).get()});
+    if(!s.exists||s.data().expiresAt<now()){code=c;break}
+  }
+  if(!code){toast('Couldn’t find a free room code. Please try again.');return}
+  var room={code:code,listId:l.id,listName:l.name,words:l.words,mode:st.mode,speed:st.speed,limitSec:st.limit*60,
+    status:'lobby',round:1,startAt:0,seed:Math.floor(Math.random()*1e9),removed:[],createdAt:now(),expiresAt:now()+DAY};
+  await dbRetry(function(){return DB.doc('rooms/'+code).set(room)});
+  S.setup=null;openTeacherRoom(code);
+}
+
+/* ----- teacher room: lobby, live, report ----- */
+function openTeacherRoom(code){
+  leaveRoom();clearHome();
+  S.code=code;S.room=null;S.players=[];S.tview='';
+  setView('troom','<section class="center"><p class="lead">Opening room '+esc(code)+'…</p></section>');
+  S.subs.push(watch(function(){return DB.doc('rooms/'+code)},onRoomTeacher));
+  S.subs.push(watch(function(){return DB.collection('rooms/'+code+'/players')},onPlayersTeacher));
+  S.tick=setInterval(teacherTick,250);
+}
+function curPlayers(){return S.players.filter(function(p){return S.room&&p.round===S.room.round})}
+function onRoomTeacher(snap){
+  if(!S.code||S.role!=='teacher'||!/^(t-|troom$)/.test(S.view))return;
+  if(!snap.exists){toast('That room has been closed.');renderTeacherHome();return}
+  S.room=snap.data();renderTeacherRoom();
+}
+function onPlayersTeacher(snap){
+  S.players=snap.docs.map(function(d){return Object.assign({id:d.id},d.data())});
+  if(S.room&&/^(t-|troom$)/.test(S.view))renderTeacherRoom(true);
+}
+function modeText(r){return (r.mode==='most'?'Most words · '+(r.limitSec/60)+(r.limitSec===60?' minute':' minutes'):'Fastest time')+' · '+(SPEEDS[r.speed]||SPEEDS[2]).name+' · '+esc(r.listName)+' ('+r.words.length+' words)'}
+function renderTeacherRoom(soft){
+  var r=S.room;if(!r)return;
+  var v=r.status==='lobby'?'t-lobby':(r.status==='running'?'t-live':'t-report');
+  if(S.view!==v){
+    S.tview=v;
+    if(v==='t-lobby')buildLobby();else if(v==='t-live')buildLive();else buildReport();
+  }else if(v==='t-report'&&!soft){buildReport()}
+  if(v==='t-lobby')updateLobby();else if(v==='t-live')updateLive();
+  else if(v==='t-report'&&soft)updateReportOnly();
+}
+function buildLobby(){
+  var r=S.room;
+  setView('t-lobby','<section class="stack" style="text-align:center">'
+    +'<p class="lead" style="margin:0 auto">Students: choose “I’m a Student” and type this room code</p>'
+    +'<div class="bigcode" aria-label="Room code">'+esc(r.code)+'</div>'
+    +'<p class="muted">'+modeText(r)+'</p>'
+    +'<h3 id="lobCount">Waiting for students…</h3>'
+    +'<div class="players" id="plist" style="justify-content:center"></div>'
+    +'<div class="row" style="justify-content:center"><button class="btn primary" id="btnStart" data-act="start" style="font-size:1.6rem;min-height:72px">Start game</button><button class="btn" data-act="t-back">Back to teacher area</button><button class="btn" data-act="room-close" data-code="'+esc(r.code)+'" data-confirm>Close room</button></div>'
+    +'</section>');
+}
+function updateLobby(){
+  var ps=curPlayers().sort(function(a,b){return (a.joinedAt||0)-(b.joinedAt||0)});
+  var el=$('#plist');if(!el)return;
+  $('#lobCount').textContent=ps.length?ps.length+(ps.length===1?' student has joined':' students have joined'):'Waiting for students…';
+  var h='',t=now();
+  ps.forEach(function(p){h+='<div class="pchip'+(t-(p.lastSeen||0)>40000?' stale':'')+'">'+esc(p.name)+'<button data-act="kick" data-slug="'+esc(p.id)+'" aria-label="Remove '+esc(p.name)+'">✕</button></div>'});
+  if(el.dataset.h!==h){el.innerHTML=h;el.dataset.h=h}
+  $('#btnStart').disabled=!ps.length;
+}
+function buildLive(){
+  var r=S.room;
+  setView('t-live','<section class="stack">'
+    +'<div class="row between"><div><b>Room '+esc(r.code)+'</b> · <span class="muted">'+modeText(r)+'</span></div>'
+    +'<div class="row"><div class="timer" id="lvTimer">0:00</div><button class="btn danger small" data-act="end-now" data-confirm>End game now</button></div></div>'
+    +'<div class="lb" id="lb"></div>'
+    +'</section>');
+  updateLive();
+}
+function lbRows(){
+  var r=S.room,ranked=rankPlayers(curPlayers(),r.mode),max=1;
+  ranked.forEach(function(p){if((p.correct||0)>max)max=p.correct});
+  return ranked.map(function(p){
+    var pct=r.mode==='fastest'?Math.round((p.progress||0)*100):Math.round(100*(p.correct||0)/max);
+    var sc=r.mode==='fastest'?(p.done?fmtTime(p.timeMs,true):(p.correct||0)+'/'+r.words.length):(p.correct||0)+' words';
+    return {key:p.id,rank:p._rank,name:p.name,pct:pct,sc:sc+' · '+accText(p),done:!!p.done};
+  });
+}
+function patchLeaderboard(el,rows){
+  var ex={};$$('.lrow',el).forEach(function(n){ex[n.dataset.k]=n});
+  rows.forEach(function(r,i){
+    var n=ex[r.key];
+    if(!n){n=document.createElement('div');n.className='lrow';n.dataset.k=r.key;n.innerHTML='<span class="rk"></span><span class="nm"></span><span class="bar"><i></i></span><span class="sc"></span>'}
+    delete ex[r.key];
+    n.querySelector('.rk').textContent=r.rank;n.querySelector('.nm').textContent=r.name;
+    n.querySelector('.bar i').style.width=r.pct+'%';n.querySelector('.sc').textContent=r.sc;
+    n.classList.toggle('done',r.done);
+    if(el.children[i]!==n)el.insertBefore(n,el.children[i]||null);
+  });
+  Object.keys(ex).forEach(function(k){ex[k].remove()});
+}
+function updateLive(){var el=$('#lb');if(el)patchLeaderboard(el,lbRows())}
+/* 250 ms tick: countdown overlay, game timer, and automatic end of the game */
+function teacherTick(){
+  var r=S.room;if(!r||r.status!=='running')return;
+  var left=r.startAt-now();
+  var ov=$('#tcd');
+  if(left>0){
+    if(!ov){ov=document.createElement('div');ov.id='tcd';ov.className='fullcd';ov.innerHTML='<p class="lead">Get ready!</p><div class="big" id="tcdNum" style="font:700 14rem var(--f-disp)"></div>';document.body.appendChild(ov)}
+    var n=Math.ceil(left/1000),el=$('#tcdNum');if(el&&el.textContent!=String(n)){el.textContent=n;Snd.beep(false)}
+    return;
+  }
+  if(ov){ov.remove();Snd.beep(true)}
+  var el2=$('#lvTimer');
+  var elapsed=now()-r.startAt;
+  if(el2)el2.textContent=r.mode==='most'?fmtTime(r.limitSec*1000-elapsed):fmtTime(elapsed);
+  var cur=curPlayers(),allDone=cur.length>0&&cur.every(function(p){return p.done});
+  var timeUp=r.mode==='most'&&elapsed>r.limitSec*1000+6000;
+  if((allDone||timeUp)&&!S.ending){S.ending=true;endRoom()}
+}
+async function endRoom(){
+  try{await DB.doc('rooms/'+S.code).update({status:'ended',endedAt:now()})}catch(e){}
+  S.ending=false;
+}
+async function startGame(){
+  var b=$('#btnStart');if(b)b.disabled=true;
+  await dbRetry(function(){return DB.doc('rooms/'+S.code).update({status:'running',startAt:now()+3500})});
+}
+function buildReport(){
+  var r=S.room,ranked=rankPlayers(curPlayers(),r.mode);
+  var agg={};
+  curPlayers().forEach(function(p){(p.trouble||[]).forEach(function(t){var a=agg[t.w]||(agg[t.w]={w:t.w,m:0,s:0,kids:0});a.m+=t.m||0;a.s+=t.s||0;if(t.m||t.s)a.kids++})});
+  var miss=Object.keys(agg).map(function(k){return agg[k]}).sort(function(a,b){return (b.m*2+b.s)-(a.m*2+a.s)}).slice(0,12);
+  S.report={ranked:ranked,miss:miss};
+  setView('t-report','<section class="stack">'
+    +'<div class="row between"><div><h2>Game report</h2><p class="muted">Room '+esc(r.code)+' · '+modeText(r)+'</p></div>'
+    +'<div class="row"><button class="btn primary" data-act="play-again">Play again</button><button class="btn blue" data-act="csv">Export CSV</button><button class="btn" data-act="t-back">Done</button></div></div>'
+    +'<div class="card stack"><h3>Rankings</h3><div class="tw" id="repTable"></div></div>'
+    +'<div class="card stack"><h3>Words the class missed most</h3><div id="repMiss"></div></div>'
+    +'<div id="csvBox"></div></section>');
+  updateReportOnly();
+}
+function updateReportOnly(){
+  var r=S.room,ranked=rankPlayers(curPlayers(),r.mode);
+  var agg={};
+  curPlayers().forEach(function(p){(p.trouble||[]).forEach(function(t){var a=agg[t.w]||(agg[t.w]={w:t.w,m:0,s:0,kids:0});a.m+=t.m||0;a.s+=t.s||0;if(t.m||t.s)a.kids++})});
+  var miss=Object.keys(agg).map(function(k){return agg[k]}).sort(function(a,b){return (b.m*2+b.s)-(a.m*2+a.s)}).slice(0,12);
+  S.report={ranked:ranked,miss:miss};
+  var t=$('#repTable');if(!t)return;
+  t.innerHTML=ranked.length?'<table><thead><tr><th class="n">Rank</th><th>Name</th><th class="n">Words right</th><th class="n">Accuracy</th><th class="n">Time</th><th class="n">Missed</th></tr></thead><tbody>'
+    +ranked.map(function(p){return '<tr><td class="n"><b>'+p._rank+'</b></td><td>'+esc(p.name)+'</td><td class="n">'+(p.correct||0)+'</td><td class="n">'+accText(p)+'</td><td class="n">'+(r.mode==='fastest'?(p.done?fmtTime(p.timeMs,true):'not finished'):fmtTime((r.limitSec||0)*1000))+'</td><td class="n">'+(p.missed||0)+'</td></tr>'}).join('')+'</tbody></table>'
+    :'<p>No students played this round.</p>';
+  $('#repMiss').innerHTML=miss.length?'<div class="tw"><table><thead><tr><th>Word</th><th class="n">Reached the bottom</th><th class="n">Typing slips</th><th class="n">Students</th></tr></thead><tbody>'
+    +miss.map(function(m){return '<tr><td><b>'+esc(m.w)+'</b></td><td class="n">'+m.m+'</td><td class="n">'+m.s+'</td><td class="n">'+m.kids+'</td></tr>'}).join('')+'</tbody></table></div>'
+    :'<p>No missed words. What a class!</p>';
+}
+async function playAgain(){
+  await dbRetry(function(){return DB.doc('rooms/'+S.code).update({status:'lobby',round:(S.room.round||1)+1,startAt:0,endedAt:0,expiresAt:Math.max(S.room.expiresAt,now()+6*3600*1000)})});
+  S.ending=false;
+}
+/* ----- CSV export (uses the downloads capability; falls back to copyable text) ----- */
+function csvCell(v){v=String(v==null?'':v);if(/^[=+\-@]/.test(v))v="'"+v;return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
+function buildCsv(){
+  var r=S.room,rep=S.report,rows=[['Rank','Name','Words right','Accuracy %','Time','Words missed','Typing slips','Mode','Room','List','Date']];
+  rep.ranked.forEach(function(p){
+    var tot=(p.correct||0)+(p.missed||0);
+    rows.push([p._rank,p.name,p.correct||0,tot?Math.round(100*p.correct/tot):'',r.mode==='fastest'?(p.done?fmtTime(p.timeMs,true):'not finished'):fmtTime(r.limitSec*1000),p.missed||0,p.slips||0,r.mode==='most'?'Most words':'Fastest time',r.code,r.listName,new Date(r.createdAt).toISOString().slice(0,10)]);
+  });
+  rows.push([]);rows.push(['Word','Reached the bottom','Typing slips','Students']);
+  rep.miss.forEach(function(m){rows.push([m.w,m.m,m.s,m.kids])});
+  return '﻿'+rows.map(function(r){return r.map(csvCell).join(',')}).join('\r\n');
+}
+async function exportCsv(){
+  var csv=buildCsv(),name='spelling-results-'+S.room.code+'.csv';
+  try{var blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();toast('Downloading '+name);return}catch(e){}
+  $('#csvBox').innerHTML='<div class="card stack"><h3>Copy your results</h3><p class="muted">Saving a file isn’t available here. Copy this text into a spreadsheet.</p><textarea id="csvText" readonly></textarea><button class="btn blue" data-act="csv-copy">Copy</button></div>';
+  $('#csvText').value=csv;
+}
+async function kick(slug){
+  var removed=(S.room.removed||[]).concat([slug]);
+  await dbRetry(function(){return DB.doc('rooms/'+S.code).update({removed:removed})});
+  await dbRetry(function(){return DB.doc('rooms/'+S.code+'/players/'+slug).delete()});
+  toast('Student removed');
+}
+
+/* =====================================================================
+   LEAVING ROOMS / ROUTING / EVENTS
+   ===================================================================== */
+function leaveRoom(){
+  S.subs.forEach(function(f){try{f()}catch(e){}});S.subs=[];
+  if(S.tick){clearInterval(S.tick);S.tick=null}
+  var o=$('#tcd');if(o)o.remove();
+  $$('.fullcd').forEach(function(n){n.remove()});
+  stopEngine();G=null;
+  S.code=null;S.room=null;S.players=[];S.player=null;S.slug=null;S.writer=null;S.cd=false;S.ending=false;
+}
+var ACT={
+  'home':function(){if(S.view==='game'&&G&&!G.solo&&!G.over){toast('Finish this round first!');return}S.role=null;renderHome()},
+  'sound':function(){Snd.muted=!Snd.muted;store.set('muted',Snd.muted);applyPrefs()},
+  'font':function(){store.set('dys',!store.get('dys',false));applyPrefs()},
+  'role-teacher':function(){S.role='teacher';renderTeacherGate()},
+  'role-student':function(){S.role='student';renderStudent()},
+  'back-student':function(){S.role='student';renderStudent()},
+  'join':doJoin,'rejoin':function(){S.role='student';rejoin()},
+  'host-new':function(){S.role='student';renderHostSetup()},
+  'leave-game':function(){var c=S.code,sl=S.slug;S.role=null;leaveRoom();store.del('sp_session');renderHome();if(DB&&c&&sl){try{DB.doc('rooms/'+c+'/players/'+sl).delete().catch(function(){})}catch(e){}}toast('You left the room')},
+  'hs-mode':function(b){S.hs.mode=b.dataset.v;renderHostSetup()},
+  'hs-speed':function(b){S.hs.speed=+b.dataset.i;renderHostSetup()},
+  'hs-limit':function(b){S.hs.limit=+b.dataset.v;renderHostSetup()},
+  'hs-create':createHostRoom,
+  'host-start':hostStart,
+  'host-again':playAgain,
+  'host-end':endRoom,
+  'host-close':async function(){var c=S.code;leaveRoom();store.del('sp_session');S.role=null;renderHome();try{await deleteRoom(c);toast('Room closed')}catch(e){}},
+  'solo':function(){S.role=S.role||'student';renderSolo()},
+  'solo-speed':function(b){S.soloSpeed=+b.dataset.i;renderSolo()},
+  'solo-go':function(){startSolo(soloWords())},
+  'solo-again':function(){startSolo(soloWords())},
+  'practise-missed':function(){S.soloSel='missed';S.missedForPractice=S.missedForPractice||[];renderSolo()},
+  'hear':function(b){S.hear=!S.hear;store.set('hear',S.hear);b.setAttribute('aria-pressed',S.hear?'true':'false');if(G&&G.typer)G.typer.focus()},
+  'say':function(){if(!G)return;var w=lowest();if(w)speak(w.word);G.typer.focus()},
+  'pause':togglePause,
+  'gate-go':gateGo,
+  't-lock':function(){sess.del('sp_t');S.role=null;renderHome()},
+  't-back':function(){S.role='teacher';renderTeacherHome()},
+  'tab':function(b){S.tab=b.dataset.tab;renderTeacherHome()},
+  'pin-change':function(){
+    var box=$('#pinbox');box.hidden=false;
+    box.innerHTML='<div class="card stack"><h3>Change the shared PIN</h3><div><label for="npin">New PIN (at least 4 characters)</label><input id="npin" type="password" autocomplete="off"></div><div id="npErr" hidden></div><div class="row"><button class="btn primary small" data-act="pin-save">Save PIN</button><button class="btn small" data-act="pin-cancel">Cancel</button></div></div>';$('#npin').focus();
+  },
+  'pin-cancel':function(){$('#pinbox').hidden=true},
+  'pin-save':async function(){
+    var p=$('#npin').value,e=$('#npErr');
+    if(p.length<4){e.hidden=false;e.className='err';e.textContent='Please use at least 4 characters.';return}
+    var ph=await hashPin(p);
+    try{await dbRetry(function(){return DB.doc('settings/school').set({pinHash:ph,createdAt:now()})});$('#pinbox').hidden=true;toast('PIN changed')}
+    catch(err){e.hidden=false;e.className='err';e.textContent='Couldn’t save the PIN. Please try again.'}
+  },
+  'list-new':function(){openEditor(null)},
+  'list-edit':function(b){openEditor(b.dataset.id)},
+  'list-cancel':function(){$('#editor').hidden=true},
+  'list-save':saveList,
+  'list-dup':function(b){dupList(b.dataset.id)},
+  'list-del':async function(b){await dbRetry(function(){return DB.doc('lists/'+b.dataset.id).delete()});toast('List deleted')},
+  'list-sample':sampleList,
+  'setup-new':function(b){S.setup=null;renderSetup(b&&b.dataset?b.dataset.id:null)},
+  'su-mode':function(b){S.setup.mode=b.dataset.v;renderSetup()},
+  'su-speed':function(b){S.setup.speed=+b.dataset.i;renderSetup()},
+  'su-limit':function(b){S.setup.limit=+b.dataset.v;renderSetup()},
+  'su-create':function(b){b.disabled=true;createRoom()},
+  'room-open':function(b){openTeacherRoom(b.dataset.code)},
+  'room-close':async function(b){var c=b.dataset.code;await deleteRoom(c);if(S.code===c){leaveRoom();renderTeacherHome()}toast('Room closed')},
+  'start':startGame,
+  'kick':function(b){kick(b.dataset.slug)},
+  'end-now':endRoom,
+  'play-again':playAgain,
+  'csv':exportCsv,
+  'csv-copy':function(){var t=$('#csvText');t.select();try{navigator.clipboard.writeText(t.value).then(function(){toast('Copied')},function(){toast('Press Ctrl+C to copy')})}catch(e){toast('Press Ctrl+C to copy')}}
+};
+
+/* Two-step confirmation (the viewer has no confirm() dialog) */
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-act]');if(!b)return;
+  if(b.hasAttribute('data-confirm')&&!b.classList.contains('armed')){
+    var old=b.textContent;b.classList.add('armed');b.textContent='Tap again to confirm';
+    setTimeout(function(){if(b.isConnected){b.classList.remove('armed');b.textContent=old}},3500);return;
+  }
+  var f=ACT[b.dataset.act];if(f)f(b,e);
+});
+/* Keep typing focused during play so tablets keep their keyboard up */
+document.addEventListener('pointerup',function(e){
+  if(S.view==='game'&&G&&!G.over&&!G.paused&&G.typer&&!e.target.closest('button'))G.typer.focus();
+});
+
+/* ---------- boot ---------- */
+async function boot(){
+  buildSea();applyPrefs();renderHome();
+  try{
+    firebase.initializeApp(FIREBASE_CONFIG);
+    DB=makeFirebaseDB(firebase.database());
+  }catch(e){console.warn('Firebase unavailable',e);DB=null}
+  S.dbReady=true;
+  if(S.view==='home')renderHome();
+}
+boot();
+})();
+</script>
+</body>
+</html>
